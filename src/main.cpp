@@ -1,5 +1,7 @@
 #include <windows.h>
 #include "frame.h"
+#include <chrono>
+#include <iostream>
 
 LRESULT CALLBACK WndProc(HWND,UINT,WPARAM,LPARAM);
 const TCHAR szName[]=TEXT("win");
@@ -125,6 +127,15 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 		RealizePalette(hdc);
 	}
 
+	auto fps = [fc = 0, time = std::chrono::steady_clock::now()]() mutable {
+	    ++fc;
+		if ((std::chrono::steady_clock::now() - time) > std::chrono::seconds(1)) {
+		    std::cout << fc << std::endl;
+			time = std::chrono::steady_clock::now();
+			fc = 0;
+		}
+	};
+
 	while(!willExit) {
 		if(PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
 			if(msg.message==WM_QUIT)
@@ -137,6 +148,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,PSTR szCmdLine,in
 			runWindow();
 			draw();
 			BitBlt(hdc,0,0,swidth,sheight,dibDC,0,0,SRCCOPY);
+			fps();
 		}
 	}
 

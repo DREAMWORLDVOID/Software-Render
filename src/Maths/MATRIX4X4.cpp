@@ -1,23 +1,11 @@
-//////////////////////////////////////////////////////////////////////////////////////////
-//	MATRIX4X4.cpp
-//	function definitions for 4x4 matrix class
-//	Downloaded from: www.paulsprojects.net
-//	Created:	20th July 2002
-//	Updated:	19th August 2002	-	Corrected 2nd SetPerspective for n!=1.0f
-//				26th September 2002	-	Added nudge to prevent artifacts with infinite far plane
-//									-	Improved speed
-//				7th November 2002	-	Added Affine Inverse functions
-//									-	Changed constructors
-//									-	Added special cases for row3 = (0, 0, 0, 1)
-//				17th December 2002	-	Converted from radians to degrees for consistency
-//										with OpenGL. Should have been done a long time ago...
-//
-//	Copyright (c) 2006, Paul Baker
-//	Distributed under the New BSD Licence. (See accompanying file License.txt or copy at
-//	http://www.paulsprojects.net/NewBSDLicense.txt)
-//////////////////////////////////////////////////////////////////////////////////////////	
+#include <cmath>
 #include <memory.h>
-#include "Maths.h"
+#include "MATRIX4X4.h"
+
+//VC++ math.h (and others) do not define M_PI
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 MATRIX4X4::MATRIX4X4(float e0, float e1, float e2, float e3,
 					float e4, float e5, float e6, float e7,
@@ -114,162 +102,6 @@ void MATRIX4X4::LoadZero(void)
 	memset(entries, 0, 16*sizeof(float));
 }
 
-MATRIX4X4 MATRIX4X4::operator+(const MATRIX4X4 & rhs) const		//overloaded operators
-{
-	return MATRIX4X4(	entries[0]+rhs.entries[0],
-						entries[1]+rhs.entries[1],
-						entries[2]+rhs.entries[2],
-						entries[3]+rhs.entries[3],
-						entries[4]+rhs.entries[4],
-						entries[5]+rhs.entries[5],
-						entries[6]+rhs.entries[6],
-						entries[7]+rhs.entries[7],
-						entries[8]+rhs.entries[8],
-						entries[9]+rhs.entries[9],
-						entries[10]+rhs.entries[10],
-						entries[11]+rhs.entries[11],
-						entries[12]+rhs.entries[12],
-						entries[13]+rhs.entries[13],
-						entries[14]+rhs.entries[14],
-						entries[15]+rhs.entries[15]);
-}
-
-MATRIX4X4 MATRIX4X4::operator-(const MATRIX4X4 & rhs) const		//overloaded operators
-{
-	return MATRIX4X4(	entries[0]-rhs.entries[0],
-						entries[1]-rhs.entries[1],
-						entries[2]-rhs.entries[2],
-						entries[3]-rhs.entries[3],
-						entries[4]-rhs.entries[4],
-						entries[5]-rhs.entries[5],
-						entries[6]-rhs.entries[6],
-						entries[7]-rhs.entries[7],
-						entries[8]-rhs.entries[8],
-						entries[9]-rhs.entries[9],
-						entries[10]-rhs.entries[10],
-						entries[11]-rhs.entries[11],
-						entries[12]-rhs.entries[12],
-						entries[13]-rhs.entries[13],
-						entries[14]-rhs.entries[14],
-						entries[15]-rhs.entries[15]);
-}
-
-MATRIX4X4 MATRIX4X4::operator*(const MATRIX4X4 & rhs) const
-{
-	//Optimise for matrices in which bottom row is (0, 0, 0, 1) in both matrices
-	if(	entries[3]==0.0f && entries[7]==0.0f && entries[11]==0.0f && entries[15]==1.0f	&&
-		rhs.entries[3]==0.0f && rhs.entries[7]==0.0f &&
-		rhs.entries[11]==0.0f && rhs.entries[15]==1.0f)
-	{
-		return MATRIX4X4(	entries[0]*rhs.entries[0]+entries[4]*rhs.entries[1]+entries[8]*rhs.entries[2],
-							entries[1]*rhs.entries[0]+entries[5]*rhs.entries[1]+entries[9]*rhs.entries[2],
-							entries[2]*rhs.entries[0]+entries[6]*rhs.entries[1]+entries[10]*rhs.entries[2],
-							0.0f,
-							entries[0]*rhs.entries[4]+entries[4]*rhs.entries[5]+entries[8]*rhs.entries[6],
-							entries[1]*rhs.entries[4]+entries[5]*rhs.entries[5]+entries[9]*rhs.entries[6],
-							entries[2]*rhs.entries[4]+entries[6]*rhs.entries[5]+entries[10]*rhs.entries[6],
-							0.0f,
-							entries[0]*rhs.entries[8]+entries[4]*rhs.entries[9]+entries[8]*rhs.entries[10],
-							entries[1]*rhs.entries[8]+entries[5]*rhs.entries[9]+entries[9]*rhs.entries[10],
-							entries[2]*rhs.entries[8]+entries[6]*rhs.entries[9]+entries[10]*rhs.entries[10],
-							0.0f,
-							entries[0]*rhs.entries[12]+entries[4]*rhs.entries[13]+entries[8]*rhs.entries[14]+entries[12],
-							entries[1]*rhs.entries[12]+entries[5]*rhs.entries[13]+entries[9]*rhs.entries[14]+entries[13],
-							entries[2]*rhs.entries[12]+entries[6]*rhs.entries[13]+entries[10]*rhs.entries[14]+entries[14],
-							1.0f);
-	}
-
-	//Optimise for when bottom row of 1st matrix is (0, 0, 0, 1)
-	if(	entries[3]==0.0f && entries[7]==0.0f && entries[11]==0.0f && entries[15]==1.0f)
-	{
-		return MATRIX4X4(	entries[0]*rhs.entries[0]+entries[4]*rhs.entries[1]+entries[8]*rhs.entries[2]+entries[12]*rhs.entries[3],
-							entries[1]*rhs.entries[0]+entries[5]*rhs.entries[1]+entries[9]*rhs.entries[2]+entries[13]*rhs.entries[3],
-							entries[2]*rhs.entries[0]+entries[6]*rhs.entries[1]+entries[10]*rhs.entries[2]+entries[14]*rhs.entries[3],
-							rhs.entries[3],
-							entries[0]*rhs.entries[4]+entries[4]*rhs.entries[5]+entries[8]*rhs.entries[6]+entries[12]*rhs.entries[7],
-							entries[1]*rhs.entries[4]+entries[5]*rhs.entries[5]+entries[9]*rhs.entries[6]+entries[13]*rhs.entries[7],
-							entries[2]*rhs.entries[4]+entries[6]*rhs.entries[5]+entries[10]*rhs.entries[6]+entries[14]*rhs.entries[7],
-							rhs.entries[7],
-							entries[0]*rhs.entries[8]+entries[4]*rhs.entries[9]+entries[8]*rhs.entries[10]+entries[12]*rhs.entries[11],
-							entries[1]*rhs.entries[8]+entries[5]*rhs.entries[9]+entries[9]*rhs.entries[10]+entries[13]*rhs.entries[11],
-							entries[2]*rhs.entries[8]+entries[6]*rhs.entries[9]+entries[10]*rhs.entries[10]+entries[14]*rhs.entries[11],
-							rhs.entries[11],
-							entries[0]*rhs.entries[12]+entries[4]*rhs.entries[13]+entries[8]*rhs.entries[14]+entries[12]*rhs.entries[15],
-							entries[1]*rhs.entries[12]+entries[5]*rhs.entries[13]+entries[9]*rhs.entries[14]+entries[13]*rhs.entries[15],
-							entries[2]*rhs.entries[12]+entries[6]*rhs.entries[13]+entries[10]*rhs.entries[14]+entries[14]*rhs.entries[15],
-							rhs.entries[15]);
-	}
-
-	//Optimise for when bottom row of 2nd matrix is (0, 0, 0, 1)
-	if(	rhs.entries[3]==0.0f && rhs.entries[7]==0.0f &&
-		rhs.entries[11]==0.0f && rhs.entries[15]==1.0f)
-	{
-		return MATRIX4X4(	entries[0]*rhs.entries[0]+entries[4]*rhs.entries[1]+entries[8]*rhs.entries[2],
-							entries[1]*rhs.entries[0]+entries[5]*rhs.entries[1]+entries[9]*rhs.entries[2],
-							entries[2]*rhs.entries[0]+entries[6]*rhs.entries[1]+entries[10]*rhs.entries[2],
-							entries[3]*rhs.entries[0]+entries[7]*rhs.entries[1]+entries[11]*rhs.entries[2],
-							entries[0]*rhs.entries[4]+entries[4]*rhs.entries[5]+entries[8]*rhs.entries[6],
-							entries[1]*rhs.entries[4]+entries[5]*rhs.entries[5]+entries[9]*rhs.entries[6],
-							entries[2]*rhs.entries[4]+entries[6]*rhs.entries[5]+entries[10]*rhs.entries[6],
-							entries[3]*rhs.entries[4]+entries[7]*rhs.entries[5]+entries[11]*rhs.entries[6],
-							entries[0]*rhs.entries[8]+entries[4]*rhs.entries[9]+entries[8]*rhs.entries[10],
-							entries[1]*rhs.entries[8]+entries[5]*rhs.entries[9]+entries[9]*rhs.entries[10],
-							entries[2]*rhs.entries[8]+entries[6]*rhs.entries[9]+entries[10]*rhs.entries[10],
-							entries[3]*rhs.entries[8]+entries[7]*rhs.entries[9]+entries[11]*rhs.entries[10],
-							entries[0]*rhs.entries[12]+entries[4]*rhs.entries[13]+entries[8]*rhs.entries[14]+entries[12],
-							entries[1]*rhs.entries[12]+entries[5]*rhs.entries[13]+entries[9]*rhs.entries[14]+entries[13],
-							entries[2]*rhs.entries[12]+entries[6]*rhs.entries[13]+entries[10]*rhs.entries[14]+entries[14],
-							entries[3]*rhs.entries[12]+entries[7]*rhs.entries[13]+entries[11]*rhs.entries[14]+entries[15]);
-	}	
-	
-	return MATRIX4X4(	entries[0]*rhs.entries[0]+entries[4]*rhs.entries[1]+entries[8]*rhs.entries[2]+entries[12]*rhs.entries[3],
-						entries[1]*rhs.entries[0]+entries[5]*rhs.entries[1]+entries[9]*rhs.entries[2]+entries[13]*rhs.entries[3],
-						entries[2]*rhs.entries[0]+entries[6]*rhs.entries[1]+entries[10]*rhs.entries[2]+entries[14]*rhs.entries[3],
-						entries[3]*rhs.entries[0]+entries[7]*rhs.entries[1]+entries[11]*rhs.entries[2]+entries[15]*rhs.entries[3],
-						entries[0]*rhs.entries[4]+entries[4]*rhs.entries[5]+entries[8]*rhs.entries[6]+entries[12]*rhs.entries[7],
-						entries[1]*rhs.entries[4]+entries[5]*rhs.entries[5]+entries[9]*rhs.entries[6]+entries[13]*rhs.entries[7],
-						entries[2]*rhs.entries[4]+entries[6]*rhs.entries[5]+entries[10]*rhs.entries[6]+entries[14]*rhs.entries[7],
-						entries[3]*rhs.entries[4]+entries[7]*rhs.entries[5]+entries[11]*rhs.entries[6]+entries[15]*rhs.entries[7],
-						entries[0]*rhs.entries[8]+entries[4]*rhs.entries[9]+entries[8]*rhs.entries[10]+entries[12]*rhs.entries[11],
-						entries[1]*rhs.entries[8]+entries[5]*rhs.entries[9]+entries[9]*rhs.entries[10]+entries[13]*rhs.entries[11],
-						entries[2]*rhs.entries[8]+entries[6]*rhs.entries[9]+entries[10]*rhs.entries[10]+entries[14]*rhs.entries[11],
-						entries[3]*rhs.entries[8]+entries[7]*rhs.entries[9]+entries[11]*rhs.entries[10]+entries[15]*rhs.entries[11],
-						entries[0]*rhs.entries[12]+entries[4]*rhs.entries[13]+entries[8]*rhs.entries[14]+entries[12]*rhs.entries[15],
-						entries[1]*rhs.entries[12]+entries[5]*rhs.entries[13]+entries[9]*rhs.entries[14]+entries[13]*rhs.entries[15],
-						entries[2]*rhs.entries[12]+entries[6]*rhs.entries[13]+entries[10]*rhs.entries[14]+entries[14]*rhs.entries[15],
-						entries[3]*rhs.entries[12]+entries[7]*rhs.entries[13]+entries[11]*rhs.entries[14]+entries[15]*rhs.entries[15]);
-}
-
-MATRIX4X4 MATRIX4X4::operator*(const float rhs) const
-{
-	return MATRIX4X4(	entries[0]*rhs,
-						entries[1]*rhs,
-						entries[2]*rhs,
-						entries[3]*rhs,
-						entries[4]*rhs,
-						entries[5]*rhs,
-						entries[6]*rhs,
-						entries[7]*rhs,
-						entries[8]*rhs,
-						entries[9]*rhs,
-						entries[10]*rhs,
-						entries[11]*rhs,
-						entries[12]*rhs,
-						entries[13]*rhs,
-						entries[14]*rhs,
-						entries[15]*rhs);
-}
-
-MATRIX4X4 MATRIX4X4::operator/(const float rhs) const
-{
-	if (rhs==0.0f || rhs==1.0f)
-		return (*this);
-		
-	float temp=1/rhs;
-
-	return (*this)*temp;
-}
-
 MATRIX4X4 operator*(float scaleFactor, const MATRIX4X4 & rhs)
 {
 	return rhs*scaleFactor;
@@ -287,32 +119,7 @@ bool MATRIX4X4::operator==(const MATRIX4X4 & rhs) const
 
 bool MATRIX4X4::operator!=(const MATRIX4X4 & rhs) const
 {
-	return !((*this)==rhs);
-}
-
-void MATRIX4X4::operator+=(const MATRIX4X4 & rhs)
-{
-	(*this)=(*this)+rhs;
-}
-
-void MATRIX4X4::operator-=(const MATRIX4X4 & rhs)
-{
-	(*this)=(*this)-rhs;
-}
-
-void MATRIX4X4::operator*=(const MATRIX4X4 & rhs)
-{
-	(*this)=(*this)*rhs;
-}
-
-void MATRIX4X4::operator*=(const float rhs)
-{
-	(*this)=(*this)*rhs;
-}
-
-void MATRIX4X4::operator/=(const float rhs)
-{
-	(*this)=(*this)/rhs;
+	return !(*this==rhs);
 }
 
 MATRIX4X4 MATRIX4X4::operator-(void) const
@@ -323,50 +130,6 @@ MATRIX4X4 MATRIX4X4::operator-(void) const
 		result.entries[i]=-result.entries[i];
 
 	return result;
-}
-
-VECTOR4D MATRIX4X4::operator*(const VECTOR4D rhs) const
-{
-	//Optimise for matrices in which bottom row is (0, 0, 0, 1)
-	if(entries[3]==0.0f && entries[7]==0.0f && entries[11]==0.0f && entries[15]==1.0f)
-	{
-		return VECTOR4D(entries[0]*rhs.x
-					+	entries[4]*rhs.y
-					+	entries[8]*rhs.z
-					+	entries[12]*rhs.w,
-
-						entries[1]*rhs.x
-					+	entries[5]*rhs.y
-					+	entries[9]*rhs.z
-					+	entries[13]*rhs.w,
-
-						entries[2]*rhs.x
-					+	entries[6]*rhs.y
-					+	entries[10]*rhs.z
-					+	entries[14]*rhs.w,
-
-						rhs.w);
-	}
-	
-	return VECTOR4D(	entries[0]*rhs.x
-					+	entries[4]*rhs.y
-					+	entries[8]*rhs.z
-					+	entries[12]*rhs.w,
-
-						entries[1]*rhs.x
-					+	entries[5]*rhs.y
-					+	entries[9]*rhs.z
-					+	entries[13]*rhs.w,
-
-						entries[2]*rhs.x
-					+	entries[6]*rhs.y
-					+	entries[10]*rhs.z
-					+	entries[14]*rhs.w,
-
-						entries[3]*rhs.x
-					+	entries[7]*rhs.y
-					+	entries[11]*rhs.z
-					+	entries[15]*rhs.w);
 }
 
 VECTOR3D MATRIX4X4::GetRotatedVector3D(const VECTOR3D & rhs) const
