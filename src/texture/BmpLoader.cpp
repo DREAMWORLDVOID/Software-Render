@@ -1,56 +1,55 @@
 #include "BmpLoader.h"
 
 BmpLoader::BmpLoader() {
-	header=new unsigned char[54];
+    header = new unsigned char[54];
 }
 
 BmpLoader::~BmpLoader() {
-	delete[] header;
-	delete[] data;
-	printf("release image\n");
+    delete[] header;
+    delete[] data;
+    printf("release image\n");
 }
 
-bool BmpLoader::loadBitmap(const char* fileName) {
-	FILE * file = fopen(fileName,"rb");
-	if (!file) {
-		printf("Image %s could not be opened\n",fileName);
-		return false;
-	}
-	if (fread(header, 1, 54, file)!=54) {//ÎÄ¼şÍ·²¢·Ç54×Ö½Ú ¶ÁÈ¡Ê§°Ü
-	    printf("Not a correct BMP file\n");
-	    return false;
-	}
-	if (header[0]!='B' || header[1]!='M') {//ÎÄ¼şÍ·¿ªÍ·²¢·ÇBM ¶ÁÈ¡Ê§°Ü
-	    printf("Not a correct BMP file\n");
-	    return false;
-	}
+bool BmpLoader::loadBitmap(const char *fileName) {
+    FILE *file = fopen(fileName, "rb");
+    if (!file) {
+        printf("Image %s could not be opened\n", fileName);
+        return false;
+    }
+    if (fread(header, 1, 54, file) != 54) {//ï¿½Ä¼ï¿½Í·ï¿½ï¿½ï¿½ï¿½54ï¿½Ö½ï¿½ ï¿½ï¿½È¡Ê§ï¿½ï¿½
+        printf("Not a correct BMP file\n");
+        return false;
+    }
+    if (header[0] != 'B' || header[1] != 'M') {//ï¿½Ä¼ï¿½Í·ï¿½ï¿½Í·ï¿½ï¿½ï¿½ï¿½BM ï¿½ï¿½È¡Ê§ï¿½ï¿½
+        printf("Not a correct BMP file\n");
+        return false;
+    }
 
-	dataPos    = *(int*)&(header[0x0A]);//¶ÁÈ¡Î»ÖÃ Î»ÖÃÔÚÎÄ¼şÍ·0x0A´¦
-	imageSize  = *(int*)&(header[0x22]);//Í¼Æ¬ÄÚÈİ´óĞ¡Êı¾İ Î»ÖÃÔÚÎÄ¼şÍ·0x22´¦
-	width      = *(int*)&(header[0x12]);//Í¼Æ¬¿í¶ÈÊı¾İ Î»ÖÃÔÚÎÄ¼şÍ·0x12´¦
-	height     = *(int*)&(header[0x16]);//Í¼Æ¬¸ß¶ÈÊı¾İ Î»ÖÃÔÚÎÄ¼şÍ·0x16´¦
+    dataPos = *(int *) &(header[0x0A]);//ï¿½ï¿½È¡Î»ï¿½ï¿½ Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Í·0x0Aï¿½ï¿½
+    imageSize = *(int *) &(header[0x22]);//Í¼Æ¬ï¿½ï¿½ï¿½İ´ï¿½Ğ¡ï¿½ï¿½ï¿½ï¿½ Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Í·0x22ï¿½ï¿½
+    width = *(int *) &(header[0x12]);//Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Í·0x12ï¿½ï¿½
+    height = *(int *) &(header[0x16]);//Í¼Æ¬ï¿½ß¶ï¿½ï¿½ï¿½ï¿½ï¿½ Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Í·0x16ï¿½ï¿½
 
-	if (imageSize==0)
-		imageSize=width*height*3;//Í¼Æ¬ÄÚÈİÊı¾İ=×ÜÏñËØÊıx3
-	if (dataPos==0)
-		dataPos=54;//ÎÄ¼şÍ·¶ÁÍê Î»ÖÃÔÚ54×Ö½Ú´¦
+    if (imageSize == 0)
+        imageSize = width * height * 3;//Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½=ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½x3
+    if (dataPos == 0)
+        dataPos = 54;//ï¿½Ä¼ï¿½Í·ï¿½ï¿½ï¿½ï¿½ Î»ï¿½ï¿½ï¿½ï¿½54ï¿½Ö½Ú´ï¿½
 
-	data = new unsigned char[imageSize];//data·ÅÏñËØĞÅÏ¢
-	fread(data,1,imageSize,file);//¶ÁÈ¡ÏñËØ
-	fclose(file);
+    data = new unsigned char[imageSize];//dataï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
+    fread(data, 1, imageSize, file);//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
+    fclose(file);
 
-	for(int i= 0;i<(int)imageSize;i+=3)
-		swapcolor(data[i],data[i+2]);//bgr±äÎªrgb
-	
-	return true;
+    for (int i = 0; i < (int) imageSize; i += 3) swapcolor(data[i], data[i + 2]);//bgrï¿½ï¿½Îªrgb
+
+    return true;
 }
 
 int BmpLoader::getWidth() {
-	return width;
+    return width;
 }
 
 int BmpLoader::getHeight() {
-	return height;
+    return height;
 }
 
 

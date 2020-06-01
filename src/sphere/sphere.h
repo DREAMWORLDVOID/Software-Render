@@ -5,13 +5,15 @@
 
 class Sphere {
 private:
-	int faceNum;
+    int faceNum;
 public:
-	Vertex* verts;
+    Vertex *verts;
 
-	Sphere(int m,int n);
-	~Sphere();
-	void render(FrameBuffer* fb,DepthBuffer* db,VertexShader vs,FragmentShader fs,int cullFlag);
+    Sphere(int m, int n);
+
+    ~Sphere();
+
+    void render(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader fs, int cullFlag);
 };
 
 #endif /* SPHERE_H_ */

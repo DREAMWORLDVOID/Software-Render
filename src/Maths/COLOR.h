@@ -18,106 +18,133 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-class COLOR
-{
+class COLOR {
 public:
-	//constructors
-	COLOR()
-	{	r=g=b=a=0.0f;	}
+    //constructors
+    COLOR() { r = g = b = a = 0.0f; }
 
-	COLOR(float newR, float newG, float newB, float newA=0.0f)
-	{	r=newR;	g=newG;	b=newB;	a=newA;	}
+    COLOR(float newR, float newG, float newB, float newA = 0.0f) {
+        r = newR;
+        g = newG;
+        b = newB;
+        a = newA;
+    }
 
-	COLOR(const float * rhs)
-	{	r=*rhs;	g=*(rhs+1);	b=*(rhs+2); a=*(rhs+3);	}
+    COLOR(const float *rhs) {
+        r = *rhs;
+        g = *(rhs + 1);
+        b = *(rhs + 2);
+        a = *(rhs + 3);
+    }
 
-	COLOR(const COLOR & rhs)
-	{	r=rhs.r;	g=rhs.g;	b=rhs.b;	a=rhs.a;}
+    COLOR(const COLOR &rhs) {
+        r = rhs.r;
+        g = rhs.g;
+        b = rhs.b;
+        a = rhs.a;
+    }
 
-	~COLOR() {}	//empty
+    ~COLOR() {}    //empty
 
-	void Set(float newR, float newG, float newB, float newA=0.0f)
-	{	r=newR;	g=newG;	b=newB;	a=newA;	}
-	
-	//accessors kept for compatability
-	void SetR(float newR) {r = newR;}
-	void SetG(float newG) {g = newG;}
-	void SetB(float newB) {b = newB;}
-	void SetA(float newA) {a = newA;}
-	
-	float GetR() const {return r;}	//public accessor functions
-	float GetG() const {return g;}	//inline, const
-	float GetB() const {return b;}
-	float GetA() const {return a;}
+    void Set(float newR, float newG, float newB, float newA = 0.0f) {
+        r = newR;
+        g = newG;
+        b = newB;
+        a = newA;
+    }
 
-	void ClampTo01(void);			//clamp all components to [0,1]
+    //accessors kept for compatability
+    void SetR(float newR) { r = newR; }
 
-	void SetBlack(void) {r=g=b=a=1.0f;}
-	void SetWhite(void) {r=g=b=a=0.0f;}
-	void SetGrey(float shade) {r=g=b=a=shade;}
+    void SetG(float newG) { g = newG; }
 
-	//linear interpolate
-	COLOR lerp(const COLOR & c2, float factor)
-	{	return (*this)*(1.0f-factor) + c2*factor;	}
+    void SetB(float newB) { b = newB; }
 
-	//binary operators
-	COLOR operator+(const COLOR & rhs) const
-	{	return COLOR(r+rhs.r, g+rhs.g, b+rhs.b, a+rhs.a);	}
+    void SetA(float newA) { a = newA; }
 
-	COLOR operator-(const COLOR & rhs) const
-	{	return COLOR(r-rhs.r, g-rhs.g, b-rhs.b, a-rhs.a);	}
+    float GetR() const { return r; }    //public accessor functions
+    float GetG() const { return g; }    //inline, const
+    float GetB() const { return b; }
 
-	COLOR operator*(const COLOR & rhs) const
-	{	return COLOR(r*rhs.r, g*rhs.g, b*rhs.b, a*rhs.a);	}
+    float GetA() const { return a; }
 
-	COLOR operator/(const COLOR & rhs) const
-	{	return COLOR(r/rhs.r, g/rhs.g, b/rhs.b, a/rhs.a);	}
+    void ClampTo01(void);            //clamp all components to [0,1]
 
-	COLOR operator*(const float rhs) const
-	{	return COLOR(r*rhs, g*rhs, b*rhs, a*rhs);	}
+    void SetBlack(void) { r = g = b = a = 1.0f; }
 
-	COLOR operator/(const float rhs) const
-	{	return COLOR(r/rhs, g/rhs, b/rhs, a/rhs);	}
+    void SetWhite(void) { r = g = b = a = 0.0f; }
 
-	//multiply by a float, eg 3*c
-	friend COLOR operator*(float scaleFactor, const COLOR & rhs);
+    void SetGrey(float shade) { r = g = b = a = shade; }
 
-	bool operator==(const COLOR & rhs) const;
-	bool operator!=(const COLOR & rhs) const
-	{	return !((*this)==rhs);	}
+    //linear interpolate
+    COLOR lerp(const COLOR &c2, float factor) { return (*this) * (1.0f - factor) + c2 * factor; }
 
-	//self-add etc
-	COLOR operator+=(const COLOR & rhs)
-	{	(*this)=(*this)+rhs;	return (*this);	}
+    //binary operators
+    COLOR operator+(const COLOR &rhs) const { return COLOR(r + rhs.r, g + rhs.g, b + rhs.b, a + rhs.a); }
 
-	COLOR operator-=(const COLOR & rhs)
-	{	(*this)=(*this)-rhs;	return (*this);	}
+    COLOR operator-(const COLOR &rhs) const { return COLOR(r - rhs.r, g - rhs.g, b - rhs.b, a - rhs.a); }
 
-	COLOR operator*=(const COLOR & rhs)
-	{	(*this)=(*this)*rhs;	return (*this);	}
+    COLOR operator*(const COLOR &rhs) const { return COLOR(r * rhs.r, g * rhs.g, b * rhs.b, a * rhs.a); }
 
-	COLOR operator/=(const COLOR & rhs)
-	{	(*this)=(*this)/rhs;	return (*this);	}
+    COLOR operator/(const COLOR &rhs) const { return COLOR(r / rhs.r, g / rhs.g, b / rhs.b, a / rhs.a); }
 
-	COLOR operator*=(const float rhs)
-	{	(*this)=(*this)*rhs;	return (*this);	}
+    COLOR operator*(const float rhs) const { return COLOR(r * rhs, g * rhs, b * rhs, a * rhs); }
 
-	COLOR operator/=(const float rhs)
-	{	(*this)=(*this)/rhs;	return (*this);	}
+    COLOR operator/(const float rhs) const { return COLOR(r / rhs, g / rhs, b / rhs, a / rhs); }
 
-	//unary operators
-	COLOR operator-(void) const {return COLOR(-r,-g, -b, -a);}
-	COLOR operator+(void) const {return (*this);}
+    //multiply by a float, eg 3*c
+    friend COLOR operator*(float scaleFactor, const COLOR &rhs);
 
-	//cast to pointer to float for glColor4fv etc
-	operator float* () const {return (float*) this;}
-	operator const float* () const {return (const float*) this;}
+    bool operator==(const COLOR &rhs) const;
 
-	//member variables
-	float r;
-	float g;
-	float b;
-	float a;
+    bool operator!=(const COLOR &rhs) const { return !((*this) == rhs); }
+
+    //self-add etc
+    COLOR operator+=(const COLOR &rhs) {
+        (*this) = (*this) + rhs;
+        return (*this);
+    }
+
+    COLOR operator-=(const COLOR &rhs) {
+        (*this) = (*this) - rhs;
+        return (*this);
+    }
+
+    COLOR operator*=(const COLOR &rhs) {
+        (*this) = (*this) * rhs;
+        return (*this);
+    }
+
+    COLOR operator/=(const COLOR &rhs) {
+        (*this) = (*this) / rhs;
+        return (*this);
+    }
+
+    COLOR operator*=(const float rhs) {
+        (*this) = (*this) * rhs;
+        return (*this);
+    }
+
+    COLOR operator/=(const float rhs) {
+        (*this) = (*this) / rhs;
+        return (*this);
+    }
+
+    //unary operators
+    COLOR operator-(void) const { return COLOR(-r, -g, -b, -a); }
+
+    COLOR operator+(void) const { return (*this); }
+
+    //cast to pointer to float for glColor4fv etc
+    operator float *() const { return (float *) this; }
+
+    operator const float *() const { return (const float *) this; }
+
+    //member variables
+    float r;
+    float g;
+    float b;
+    float a;
 };
 
 const COLOR white(1.0f, 1.0f, 1.0f, 1.0f);
@@ -131,4 +158,4 @@ const COLOR cyan(0.0f, 1.0f, 1.0f, 1.0f);
 const COLOR magenta(1.0f, 0.0f, 1.0f, 1.0f);
 const COLOR yellow(1.0f, 1.0f, 0.0f, 1.0f);
 
-#endif	//COLOR_H
+#endif    //COLOR_H

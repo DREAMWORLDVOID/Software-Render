@@ -5,14 +5,18 @@
 
 class Square {
 private:
-	int faceNum;
-	void initVerts();
-public:
-	Vertex* verts;
+    int faceNum;
 
-	Square();
-	~Square();
-	void render(FrameBuffer* fb,DepthBuffer* db,VertexShader vs,FragmentShader fs,int cullFlag);
+    void initVerts();
+
+public:
+    Vertex *verts;
+
+    Square();
+
+    ~Square();
+
+    void render(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader fs, int cullFlag);
 };
 
 #endif /* SQUARE_H_ */

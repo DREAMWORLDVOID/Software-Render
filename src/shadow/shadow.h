@@ -4,10 +4,11 @@
 #include "../graphicLib/sampler.h"
 #include "../graphicLib/graphicLib.h"
 
-extern FrameBuffer* shadowFrame;
-extern DepthBuffer* shadowDepth;
+extern FrameBuffer *shadowFrame;
+extern DepthBuffer *shadowDepth;
 
-void initShadow(int width,int height);
+void initShadow(int width, int height);
+
 void releaseShadow();
 
 void renderShadowMap(DrawCall renderCall);

@@ -5,9 +5,13 @@
 #include "key/key.h"
 
 void draw();
+
 void init();
+
 void release();
-void resize(int width,int height);
+
+void resize(int width, int height);
+
 void act();
 
 #endif /* FRAME_H_ */

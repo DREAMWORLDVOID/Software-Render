@@ -6,10 +6,11 @@
 
 class Texture {
 public:
-	Sampler* sampler;
+    Sampler *sampler;
 
-	Texture(const char* src);
-	~Texture();
+    Texture(const char *src);
+
+    ~Texture();
 };
 
 #endif /* TEXTURE_H_ */

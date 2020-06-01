@@ -5,14 +5,18 @@
 
 class Cube {
 private:
-	int faceNum;
-	void initVerts();
-public:
-	Vertex* verts;
+    int faceNum;
 
-	Cube();
-	~Cube();
-	void render(FrameBuffer* fb,DepthBuffer* db,VertexShader vs,FragmentShader fs,int cullFlag);
+    void initVerts();
+
+public:
+    Vertex *verts;
+
+    Cube();
+
+    ~Cube();
+
+    void render(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader fs, int cullFlag);
 };
 
 #endif /* CUBE_H_ */

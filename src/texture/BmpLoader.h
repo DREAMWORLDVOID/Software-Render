@@ -1,4 +1,5 @@
 #include <stdio.h>
+
 #ifndef _BMPLOADER_H_
 #define _BMPLOADER_H_
 
@@ -6,7 +7,7 @@
 #define GREEN 1
 #define RED 2
 
-#define swapcolor(a,b){ \
+#define swapcolor(a, b){ \
         (a) ^= (b);     \
         (b) ^= (a);     \
         (a) ^= (b);     \
@@ -14,18 +15,22 @@
 
 class BmpLoader {
 private:
-	unsigned char* header;//ÎÄ¼þÍ·
-	unsigned int dataPos;//¶ÁÈ¡Î»ÖÃ
-	unsigned int imageSize;//Í¼Æ¬ÄÚÈÝ´óÐ¡
+    unsigned char *header;//ï¿½Ä¼ï¿½Í·
+    unsigned int dataPos;//ï¿½ï¿½È¡Î»ï¿½ï¿½
+    unsigned int imageSize;//Í¼Æ¬ï¿½ï¿½ï¿½Ý´ï¿½Ð¡
 
 public:
-	unsigned int width, height;//Í¼Æ¬¿í¶È ¸ß¶È
-	unsigned char* data;//Í¼Æ¬ÄÚÈÝ rgb
-	BmpLoader();
-	~BmpLoader();
-	int getWidth();
-	int getHeight();
-	bool loadBitmap(const char* fileName);
+    unsigned int width, height;//Í¼Æ¬ï¿½ï¿½ï¿½ ï¿½ß¶ï¿½
+    unsigned char *data;//Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ rgb
+    BmpLoader();
+
+    ~BmpLoader();
+
+    int getWidth();
+
+    int getHeight();
+
+    bool loadBitmap(const char *fileName);
 };
 
 #endif

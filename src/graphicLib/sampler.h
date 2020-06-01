@@ -7,15 +7,17 @@
 
 class Sampler {
 private:
-	int width,height;
+    int width, height;
 public:
-	unsigned char* imgData;
+    unsigned char *imgData;
 
-	Sampler(int sw,int sh);
-	~Sampler();
-	VECTOR4D texture2D(float s,float t);
+    Sampler(int sw, int sh);
+
+    ~Sampler();
+
+    Vec4 texture2D(float s, float t);
 };
 
-void writeFrameBuffer2Sampler(FrameBuffer* fb,Sampler* sampler);
+void writeFrameBuffer2Sampler(FrameBuffer *fb, Sampler *sampler);
 
 #endif /* SAMPLER_H_ */
