@@ -32,10 +32,10 @@ struct Vertex {
 };
 
 struct VertexOut {
-    union { struct { float x, y, z, w; }; Vec4 Clip; };
-    union { struct { float wx, wy, wz, ww; }; Vec4 World; };
-    union { struct { float vx, vy, vz, vw;}; Vec4 View; };
-    union { struct { float nx, ny, nz; }; Vec3 Normal; };
+    Vec4 Clip;
+    Vec4 World;
+    Vec4 View;
+    Vec3 Normal;
     float s, t;
 
     VertexOut() : Clip(0, 0, 0, 1),
@@ -50,25 +50,25 @@ struct VertexOut {
 
 struct Fragment {
     union { struct { float ndcX, ndcY, ndcZ; }; Vec3 Ndc; };
-    union { struct { float wx, wy, wz, ww; }; Vec4 World; };
-    union { struct { float nx, ny, nz; }; Vec3 Normal; };
+    Vec4 World;
+    Vec3 Normal;
     float s, t;
 
     Fragment() : ndcX(0), ndcY(0), ndcZ(1),
-                 wx(0), wy(0), wz(0), ww(1),
-                 nx(0), ny(0), nz(0),
+                 World(0, 0, 0, 1),
+                 Normal(0, 0, 0),
                  s(0), t(0) {}
 };
 
 struct FragmentOut {
-    union { struct { float r, g, b, a; }; Vec4 Color; };
+    Vec4 Color;
 
-    FragmentOut() : r(0), g(0), b(0), a(1) {}
+    FragmentOut() : Color(0, 0, 0, 1) {}
 };
 
-typedef void (*VertexShader)(const Vertex &input, VertexOut &output);
+using VertexShader = void (*)(const Vertex &input, VertexOut &output) noexcept;
 
-typedef void (*FragmentShader)(const Fragment &input, FragmentOut &output);
+using FragmentShader = void (*)(const Fragment &input, FragmentOut &output) noexcept;
 
-typedef void (*DrawCall)();
+using DrawCall = void (*)();
 

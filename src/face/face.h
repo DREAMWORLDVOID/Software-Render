@@ -1,5 +1,4 @@
-#ifndef FACE_H_
-#define FACE_H_
+#pragma once
 
 #include "header/constants.h"
 #include "header/datatype.h"
@@ -16,8 +15,6 @@ public:
 
     Face();
 
-    ~Face();
-
     void copy2Face(Vertex a, Vertex b, Vertex c);
 
     void copy2FaceOut(VertexOut a, VertexOut b, VertexOut c);
@@ -27,4 +24,3 @@ public:
     void calculateClipMatrixInv();
 };
 
-#endif /* FACE_H_ */

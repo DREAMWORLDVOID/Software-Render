@@ -33,7 +33,7 @@ public:
     [[nodiscard]] float GetW() const noexcept { return w; }
 
     //vector algebra
-    float DotProduct(const Vec4 &rhs) { return x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w; }
+    [[nodiscard]] float DotProduct(const Vec4 &rhs) const { return Vec4(vec.dot(rhs.vec)).GetX(); }
 
     //binary operators
     Vec4 operator+(const Vec4 &rhs) const noexcept { return Vec4(vec + rhs.vec); }
@@ -68,7 +68,9 @@ public:
 
     Vec4 operator+() const { return (*this); }
 
-    [[nodiscard]] auto Trim() const noexcept { return Vec3(x, y, z); }
+    [[nodiscard]] auto Trim() const noexcept {
+        return Vec3(vec & Sse::Vec4f(_mm_castsi128_ps(_mm_set_epi32(0, -1, -1, -1))));
+    }
 
     [[nodiscard]] auto Sse() const noexcept { return vec; }
 

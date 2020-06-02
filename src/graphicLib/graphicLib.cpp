@@ -171,14 +171,11 @@ float readDepth(DepthBuffer *db, int x, int y) {
     return db->depthBuffer[y * db->width + x];
 }
 
-void scaleColor(float red, float green, float blue,
-                unsigned char &iRed, unsigned char &iGreen, unsigned char &iBlue) {
-    red *= 255.0;
-    green *= 255.0;
-    blue *= 255.0;
-    iRed = red > 255 ? 255 : red;
-    iGreen = green > 255 ? 255 : green;
-    iBlue = blue > 255 ? 255 : blue;
+void scaleColor(const Vec3& color, unsigned char &iRed, unsigned char &iGreen, unsigned char &iBlue) {
+    const auto scaled = color * 255.0f;
+    iRed = min(255, int(scaled.GetX()));
+    iGreen = min(255, int(scaled.GetY()));
+    iBlue = min(255, int(scaled.GetZ()));
 }
 
 void viewPortTransform(float ndcX, float ndcY, float width, float height,
@@ -294,7 +291,7 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face 
         int maxX = min(fb->width - 1, roundf(max(x1, x2)));
         auto pFrag0 = baseY + uX * float(minX); // proportion fragment
         for (int scrX = minX; scrX <= maxX; (pFrag0 += uX, scrX++)) {
-            if (pFrag0.GetX() < 0.0 || pFrag0.GetY() < 0.0 || pFrag0.GetZ() < 0.0) continue;
+            if (pFrag0.Sse().sign_bits()) continue;
             float sum = pFrag0.GetX() + pFrag0.GetY() + pFrag0.GetZ();
             const auto pFrag = pFrag0 * (1.0f / sum);
 
@@ -302,21 +299,20 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face 
             const auto& cB = face->clipB;
             const auto& cC = face->clipC;
             // NDC Check
+            const auto ndcRaw = cA.Clip * pFrag.GetX() + cB.Clip * pFrag.GetY() + cC.Clip * pFrag.GetZ();
+            const auto ndc = ndcRaw * (1.0f / ndcRaw.GetW());
 
-            Fragment frag;
-            float invClipW = 1.0f / pFrag.DotProduct({face->clipA.w, face->clipB.w, face->clipC.w});
-            frag.ndcZ = pFrag.DotProduct({face->clipA.z, face->clipB.z, face->clipC.z}) * invClipW;
-            if (frag.ndcZ < -1.0f || frag.ndcZ > 1.0f) continue;
+            if (ndc.GetZ() < -1.0f || ndc.GetZ() > 1.0f) continue;
 
             // early depth
             if (db != nullptr) {
                 float storeZ = readDepth(db, scrX, scrY);
-                if (storeZ < frag.ndcZ) continue;
-                writeDepth(db, scrX, scrY, frag.ndcZ);
+                if (storeZ < ndc.GetZ()) continue;
+                writeDepth(db, scrX, scrY, ndc.GetZ());
             }
 
-            frag.ndcX = pFrag.DotProduct({face->clipA.x, face->clipB.x, face->clipC.x}) * invClipW;
-            frag.ndcY = pFrag.DotProduct({face->clipA.y, face->clipB.y, face->clipC.y}) * invClipW;
+            Fragment frag;
+            frag.Ndc = ndc.Trim();
             frag.World = cA.World * pFrag.GetX() + cB.World * pFrag.GetY() + cC.World * pFrag.GetZ();
             frag.Normal = cA.Normal * pFrag.GetX() + cB.Normal * pFrag.GetY() + cC.Normal * pFrag.GetZ();
             frag.s = pFrag.DotProduct({face->clipA.s, face->clipB.s, face->clipC.s});
@@ -325,10 +321,10 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face 
             FragmentOut outFrag;
             fs(frag, outFrag);
             unsigned char cr = 255, cg = 255, cb = 255, sr = 255, sg = 255, sb = 255;
-            scaleColor(outFrag.r, outFrag.g, outFrag.b, cr, cg, cb);
+            scaleColor(outFrag.Color.Trim(), cr, cg, cb);
             if (blendFlag) {
                 readFrameBuffer(fb, scrX, scrY, sr, sg, sb);
-                blend(cr, cg, cb, outFrag.a, sr, sg, sb, cr, cg, cb);
+                blend(cr, cg, cb, outFrag.Color.GetW(), sr, sg, sb, cr, cg, cb);
             }
             drawPixel(fb, scrX, scrY, cr, cg, cb);
         }
@@ -336,8 +332,8 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face 
 }
 
 bool cullFace(Face *face, int flag) {
-    Vec3 faceNormal(face->clipA.nx, face->clipA.ny, face->clipA.nz);
-    Vec3 eyeVec(eyeX - face->clipA.wx, eyeY - face->clipA.wy, eyeZ - face->clipA.wz);
+    Vec3 faceNormal = face->clipA.Normal;
+    Vec3 eyeVec = Vec3(eyeX, eyeY, eyeZ) - face->clipA.World.Trim();
     if (flag == CULL_NONE) return false;
     if (flag == CULL_BACK) return eyeVec.DotProduct(faceNormal) <= 0;
     if (flag == CULL_FRONT) return eyeVec.DotProduct(faceNormal) >= 0;
@@ -351,8 +347,8 @@ void drawFace(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader 
     if (cullFace(face, cullFlag))
         return;
     int clipFlag = checkFace(face);
-    if (clipFlag != 111) {
-        if (clipFlag == 000)
+    if (clipFlag != 0b111) {
+        if (clipFlag == 0b000)
             return;
         fixFaces(face, clipFlag);
         if (!cullFace(nFace1, cullFlag)) {
@@ -360,14 +356,14 @@ void drawFace(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader 
             nFace1->calculateNDCVertex();
             rasterize2(fb, db, fs, nFace1);
         }
-        if (clipFlag == 011 || clipFlag == 101 || clipFlag == 110) {
+        if (clipFlag == 0b011 || clipFlag == 0b101 || clipFlag == 0b110) {
             if (!cullFace(nFace2, cullFlag)) {
                 nFace2->calculateClipMatrixInv();
                 nFace2->calculateNDCVertex();
                 rasterize2(fb, db, fs, nFace2);
             }
         }
-    } else if (clipFlag == 111) {
+    } else if (clipFlag == 0b111) {
         face->calculateClipMatrixInv();
         face->calculateNDCVertex();
         rasterize2(fb, db, fs, face);
@@ -382,43 +378,12 @@ void drawFaces(FrameBuffer *fb, DepthBuffer *db, VertexShader vs, FragmentShader
     }
 }
 
-
 int checkFace(Face *face) {
-    bool failA = false, failB = false, failC = false;
-    int nFail = 0;
-    if (face->clipA.vz / face->clipA.vw > -clipNear) {
-        failA = true;
-        nFail++;
-    }
-    if (face->clipB.vz / face->clipB.vw > -clipNear) {
-        failB = true;
-        nFail++;
-    }
-    if (face->clipC.vz / face->clipC.vw > -clipNear) {
-        failC = true;
-        nFail++;
-    }
-
-    if (nFail == 3)
-        return 000;
-    else if (nFail == 0)
-        return 111;
-    else if (nFail == 2) {
-        if (failA && failB)
-            return 001;
-        else if (failA && failC)
-            return 010;
-        else if (failB && failC)
-            return 100;
-    } else if (nFail == 1) {
-        if (failA)
-            return 011;
-        else if (failB)
-            return 101;
-        else if (failC)
-            return 110;
-    }
-    return 000;
+    auto flags = 0b111u;
+    if (face->clipA.View.GetZ() / face->clipA.View.GetW() > -clipNear) flags&=0b011u;
+    if (face->clipB.View.GetZ() / face->clipB.View.GetW() > -clipNear) flags&=0b101u;
+    if (face->clipC.View.GetZ() / face->clipC.View.GetW() > -clipNear) flags&=0b110u;
+    return flags;
 }
 
 void initFixFace() {
@@ -433,57 +398,32 @@ void releaseFixFace() {
 
 void fixFaces(Face *face, int fixFlag) {
     switch (fixFlag) {
-        case 011:
-            fix1FailFace(face->clipA, face->clipB, face->clipC);
-            break;
-        case 101:
-            fix1FailFace(face->clipB, face->clipA, face->clipC);
-            break;
-        case 110:
-            fix1FailFace(face->clipC, face->clipA, face->clipB);
-            break;
-        case 001:
-            fix2FailFace(face->clipA, face->clipB, face->clipC);
-            break;
-        case 010:
-            fix2FailFace(face->clipA, face->clipC, face->clipB);
-            break;
-        case 100:
-            fix2FailFace(face->clipB, face->clipC, face->clipA);
-            break;
+        case 0b011:return fix1FailFace(face->clipA, face->clipB, face->clipC);
+        case 0b101:return fix1FailFace(face->clipB, face->clipA, face->clipC);
+        case 0b110:return fix1FailFace(face->clipC, face->clipA, face->clipB);
+        case 0b001:return fix2FailFace(face->clipA, face->clipB, face->clipC);
+        case 0b010:return fix2FailFace(face->clipA, face->clipC, face->clipB);
+        case 0b100:return fix2FailFace(face->clipB, face->clipC, face->clipA);
+        default: return;
     }
 }
 
 void interpolate2v(float pa, float pb,
-                   VertexOut a, VertexOut b,
+                   const VertexOut& a, const VertexOut& b,
                    VertexOut &result) {
-    interpolate2f(pa, pb, a.x, b.x, result.x);
-    interpolate2f(pa, pb, a.y, b.y, result.y);
-    interpolate2f(pa, pb, a.z, b.z, result.z);
-    interpolate2f(pa, pb, a.w, b.w, result.w);
-    interpolate2f(pa, pb, a.wx, b.wx, result.wx);
-    interpolate2f(pa, pb, a.wy, b.wy, result.wy);
-    interpolate2f(pa, pb, a.wz, b.wz, result.wz);
-    interpolate2f(pa, pb, a.ww, b.ww, result.ww);
-    interpolate2f(pa, pb, a.vx, b.vx, result.vx);
-    interpolate2f(pa, pb, a.vy, b.vy, result.vy);
-    interpolate2f(pa, pb, a.vz, b.vz, result.vz);
-    interpolate2f(pa, pb, a.vw, b.vw, result.vw);
-    interpolate2f(pa, pb, a.nx, b.nx, result.nx);
-    interpolate2f(pa, pb, a.ny, b.ny, result.ny);
-    interpolate2f(pa, pb, a.nz, b.nz, result.nz);
+    result.Clip = a.Clip * pa + b.Clip * pb;
+    result.World = a.World * pa + b.World * pb;
+    result.View = a.View * pa + b.View * pb;
+    result.Normal = a.Normal * pa + b.Normal * pb;
     interpolate2f(pa, pb, a.s, b.s, result.s);
     interpolate2f(pa, pb, a.t, b.t, result.t);
 }
 
-void fix1FailFace(VertexOut fail, VertexOut succ1, VertexOut succ2) {
+void fix1FailFace(const VertexOut& fail, const VertexOut& succ1, const VertexOut& succ2) {
     float z = -clipNear;
-    float invFailW = 1.0 / fail.vw;
-    float invSucc1W = 1.0 / succ1.vw;
-    float invSucc2W = 1.0 / succ2.vw;
-    Vec3 pFail(fail.vx * invFailW, fail.vy * invFailW, fail.vz * invFailW);
-    Vec3 pSucc1(succ1.vx * invSucc1W, succ1.vy * invSucc1W, succ1.vz * invSucc1W);
-    Vec3 pSucc2(succ2.vx * invSucc2W, succ2.vy * invSucc2W, succ2.vz * invSucc2W);
+    Vec3 pFail = fail.View.Trim() * (1.0f / fail.View.GetW());
+    Vec3 pSucc1 = succ1.View.Trim() * (1.0f / succ1.View.GetW());
+    Vec3 pSucc2 = succ2.View.Trim() * (1.0f / succ2.View.GetW());
     float param1 = calcZPara(pFail.z, pSucc1.z, z);
     Vec3 interPoint1 = calcParaEqu(pFail, pSucc1, param1);
     float sp = (pFail - interPoint1).GetLength();
@@ -510,14 +450,11 @@ void fix1FailFace(VertexOut fail, VertexOut succ1, VertexOut succ2) {
     nFace2->copy2FaceOut(succ2, succ1, inter2);
 }
 
-void fix2FailFace(VertexOut fail1, VertexOut fail2, VertexOut succ) {
+void fix2FailFace(const VertexOut& fail1, const VertexOut& fail2, const VertexOut& succ) {
     float z = -clipNear;
-    float invFail1W = 1.0 / fail1.vw;
-    float invFail2W = 1.0 / fail2.vw;
-    float invSuccW = 1.0 / succ.vw;
-    Vec3 pFail1(fail1.vx * invFail1W, fail1.vy * invFail1W, fail1.vz * invFail1W);
-    Vec3 pFail2(fail2.vx * invFail2W, fail2.vy * invFail2W, fail2.vz * invFail2W);
-    Vec3 pSucc(succ.vx * invSuccW, succ.vy * invSuccW, succ.vz * invSuccW);
+    Vec3 pFail1 = fail1.View.Trim() * (1.0f / fail1.View.GetW());
+    Vec3 pFail2 = fail2.View.Trim() * (1.0f / fail2.View.GetW());
+    Vec3 pSucc = succ.View.Trim() * (1.0f / succ.View.GetW());
     float param1 = calcZPara(pFail1.z, pSucc.z, z);
     Vec3 interPoint1 = calcParaEqu(pFail1, pSucc, param1);
     float sp = (pFail1 - interPoint1).GetLength();

@@ -5,8 +5,8 @@
 
 #define PI 3.1415926f
 #define PI2 6.2831852f
-#define A2R 0.01745329222f //�Ƕ�ת����
-#define R2A 57.2957804905f //����ת�Ƕ�
+#define A2R 0.01745329222f
+#define R2A 57.2957804905f
 
 Mat44 lookAt(float eyeX, float eyeY, float eyeZ,
              float centerX, float centerY, float centerZ,

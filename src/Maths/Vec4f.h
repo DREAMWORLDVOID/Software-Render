@@ -22,8 +22,8 @@ namespace Sse {
         Vec4f operator/(const Vec4f r) const noexcept { return Vec4f{_mm_div_ps(_vec, r._vec)}; } // NOLINT
         Vec4f operator%(const Vec4f r) const noexcept { return *this - r * (*this / r).floor(); }
 
-        Vec4f operator|(const Vec4f r) const noexcept { return Vec4f{_mm_and_ps(_vec, r._vec)}; } // NOLINT
-        Vec4f operator&(const Vec4f r) const noexcept { return Vec4f{_mm_or_ps(_vec, r._vec)}; } // NOLINT
+        Vec4f operator&(const Vec4f r) const noexcept { return Vec4f{_mm_and_ps(_vec, r._vec)}; } // NOLINT
+        Vec4f operator|(const Vec4f r) const noexcept { return Vec4f{_mm_or_ps(_vec, r._vec)}; } // NOLINT
         Vec4f operator^(const Vec4f r) const noexcept { return Vec4f{_mm_xor_ps(_vec, r._vec)}; } // NOLINT
         // special relational operators
         Vec4f operator<(const Vec4f r) const noexcept { return Vec4f(_mm_cmplt_ps(_vec, r._vec)); }

@@ -1,10 +1,9 @@
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+#pragma once
 
-#define SCREEN_WIDTH 640 //Ё╓╤х╥╤н╖ 0╣╫639
-#define SCREEN_HEIGHT 480 //©М╤х╥╤н╖ 0╣╫479
-#define MAX_X SCREEN_WIDTH-1 //фад╩вН©М639
-#define MAX_Y SCREEN_HEIGHT-1 //фад╩вН╦ъ479
+#define SCREEN_WIDTH 640 //И∙©Е╨╕Х▄┐Е⌡╢ 0Е┬╟639
+#define SCREEN_HEIGHT 480 //Е╝╫Е╨╕Х▄┐Е⌡╢ 0Е┬╟479
+#define MAX_X SCREEN_WIDTH-1 //Е╠▐Е╧∙Ф°─Е╝╫639
+#define MAX_Y SCREEN_HEIGHT-1 //Е╠▐Е╧∙Ф°─И╚≤479
 #define MIN_X 0
 #define MIN_Y 0
 #define CULL_BACK 0
@@ -21,5 +20,3 @@
 #define MFAR 6
 #define D_ROTATION 4.0
 #define D_DISTANCE 1.0
-
-#endif /* CONSTANTS_H_ */

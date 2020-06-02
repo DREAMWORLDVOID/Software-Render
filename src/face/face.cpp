@@ -12,33 +12,28 @@ Face::Face() {
     clipMatrixInv.LoadIdentity();
 }
 
-Face::~Face() {
-
-}
-
 void Face::calculateNDCVertex() {
-    float invClipAW = 1.0 / clipA.w;
-    float invClipBW = 1.0 / clipB.w;
-    float invClipCW = 1.0 / clipC.w;
-    ndcA.x = clipA.x * invClipAW;
-    ndcA.y = clipA.y * invClipAW;
-    ndcB.x = clipB.x * invClipBW;
-    ndcB.y = clipB.y * invClipBW;
-    ndcC.x = clipC.x * invClipCW;
-    ndcC.y = clipC.y * invClipCW;
+    float invClipAW = 1.0f / clipA.Clip.GetW();
+    float invClipBW = 1.0f / clipB.Clip.GetW();
+    float invClipCW = 1.0f / clipC.Clip.GetW();
+    ndcA.SetX(clipA.Clip.GetX() * invClipAW);
+    ndcA.SetY(clipA.Clip.GetY() * invClipAW);
+    ndcB.SetX(clipB.Clip.GetX() * invClipBW);
+    ndcB.SetY(clipB.Clip.GetY() * invClipBW);
+    ndcC.SetX(clipC.Clip.GetX() * invClipCW);
+    ndcC.SetY(clipC.Clip.GetY() * invClipCW);
 }
 
 void Face::calculateClipMatrixInv() {
-    clipMatrixInv.LoadIdentity();
-    clipMatrixInv.entries[0] = clipA.x;
-    clipMatrixInv.entries[1] = clipA.y;
-    clipMatrixInv.entries[2] = clipA.w;
-    clipMatrixInv.entries[4] = clipB.x;
-    clipMatrixInv.entries[5] = clipB.y;
-    clipMatrixInv.entries[6] = clipB.w;
-    clipMatrixInv.entries[8] = clipC.x;
-    clipMatrixInv.entries[9] = clipC.y;
-    clipMatrixInv.entries[10] = clipC.w;
+    const auto &cA = clipA.Clip;
+    const auto &cB = clipB.Clip;
+    const auto &cC = clipC.Clip;
+    clipMatrixInv = Mat44(
+            cA.GetX(), cA.GetY(), cA.GetW(), 0,
+            cB.GetX(), cB.GetY(), cB.GetW(), 0,
+            cC.GetX(), cC.GetY(), cC.GetW(), 0,
+            0, 0, 0, 1
+    );
     clipMatrixInv.Invert();
 }
 

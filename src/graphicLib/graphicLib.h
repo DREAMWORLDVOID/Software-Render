@@ -88,12 +88,12 @@ int checkFace(Face *face);
 
 void fixFaces(Face *face, int fixFlag);
 
-void fix1FailFace(VertexOut fail, VertexOut succ1, VertexOut succ2);
+void fix1FailFace(const VertexOut& fail, const VertexOut& succ1, const VertexOut& succ2);
 
-void fix2FailFace(VertexOut fail1, VertexOut fail2, VertexOut succ);
+void fix2FailFace(const VertexOut& fail1, const VertexOut& fail2, const VertexOut& succ);
 
 void interpolate2v(float pa, float pb,
-                   VertexOut a, VertexOut b,
+                   const VertexOut& a, const VertexOut& b,
                    VertexOut &result);
 
 #endif /* GRAPHICLIB_H_ */
