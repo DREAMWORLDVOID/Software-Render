@@ -14,7 +14,7 @@ public:
 
     explicit Vec4(const Sse::Vec4f v) noexcept: vec(v) {}
 
-    explicit Vec4(const Vec3 &rhs) noexcept : x(rhs.x), y(rhs.y), z(rhs.z), w(1.0f) {}
+    explicit Vec4(const Vec3 &rhs, const float w = 0.0f) noexcept :vec(rhs.Sse() + Sse::Vec4f(0,0,0, w)) {}
 
     void SetX(const float newX) noexcept { x = newX; }
 

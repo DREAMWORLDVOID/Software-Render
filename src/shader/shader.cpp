@@ -7,7 +7,7 @@ Sampler *currTexture = nullptr;
 Sampler *depthTexture = nullptr;
 
 void vertexShader(const Vertex &input, VertexOut &output) noexcept {
-    Vec4 modelNormal(input.nx, input.ny, input.nz, 0.0);
+    Vec4 modelNormal(input.Normal, 0.0);
     Vec4 worldNormal = modelMatrix * modelNormal;
     output.World = modelMatrix * input.Model;
     output.View = viewMatrix * output.World;
@@ -19,7 +19,7 @@ void vertexShader(const Vertex &input, VertexOut &output) noexcept {
 
 void fragmentShader(const Fragment &input, FragmentOut &output) noexcept {
     const auto worldNormal = input.Normal.GetNormalized();
-    const auto worldLightDir = Vec3(lightDir.x, lightDir.y, lightDir.z).GetNormalized();
+    const auto worldLightDir = lightDir.Trim().GetNormalized();
     const auto nDotL = max(worldLightDir.DotProduct(worldNormal), 0.0);
 
     Vec4 lightColor = amb * ambMat + (diff * diffMat) * nDotL;
@@ -47,7 +47,7 @@ void fragmentShader(const Fragment &input, FragmentOut &output) noexcept {
 
 void simpleFragShader(const Fragment &input, FragmentOut &output) noexcept {
     const auto worldNormal = input.Normal.GetNormalized();
-    const auto worldLightDir = Vec3(lightDir.x, lightDir.y, lightDir.z).GetNormalized();
+    const auto worldLightDir = lightDir.Trim().GetNormalized();
     const auto nDotL = max(worldLightDir.DotProduct(worldNormal), 0.0);
 
     const auto lightColor = amb * ambMat + (diff * diffMat) * nDotL;
@@ -56,7 +56,7 @@ void simpleFragShader(const Fragment &input, FragmentOut &output) noexcept {
 }
 
 void storeVertShader(const Vertex &input, VertexOut &output) noexcept {
-    Vec4 modelNormal(input.nx, input.ny, input.nz, 0.0);
+    Vec4 modelNormal(input.Normal, 0.0);
     Vec4 worldNormal = modelMatrix * modelNormal;
     output.World = modelMatrix * input.Model;
     output.View = lightViewMatrix * output.World;

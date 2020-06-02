@@ -1,5 +1,5 @@
 #include "graphicLib.h"
-#include "../shader/shader.h"
+#include "shader/shader.h"
 #include <utility>
 #include <array>
 
@@ -7,14 +7,14 @@ float eyeX, eyeY, eyeZ, clipNear;
 Face *nFace1;
 Face *nFace2;
 bool blendFlag = false;
-FrameBuffer *frontBuffer = NULL;
-FrameBuffer *backBuffer = NULL;
-FrameBuffer *frameBuffer1 = NULL;
-FrameBuffer *frameBuffer2 = NULL;
-DepthBuffer *depthBuffer = NULL;
+FrameBuffer *frontBuffer = nullptr;
+FrameBuffer *backBuffer = nullptr;
+FrameBuffer *frameBuffer1 = nullptr;
+FrameBuffer *frameBuffer2 = nullptr;
+DepthBuffer *depthBuffer = nullptr;
 bool buffersReady = false;
 
-unsigned char *screenBits = NULL;
+unsigned char *screenBits = nullptr;
 
 void initFrameBuffer(FrameBuffer **pfb, int width, int height) {
     *pfb = (FrameBuffer *) malloc(sizeof(FrameBuffer));
@@ -25,11 +25,11 @@ void initFrameBuffer(FrameBuffer **pfb, int width, int height) {
 }
 
 void releaseFrameBuffer(FrameBuffer **pfb) {
-    if (*pfb == NULL)
+    if (*pfb == nullptr)
         return;
     delete[] (*pfb)->colorBuffer;
     free(*pfb);
-    *pfb = NULL;
+    *pfb = nullptr;
 }
 
 void initDepthBuffer(DepthBuffer **pdb, int width, int height) {
@@ -266,11 +266,7 @@ auto GetUnits(float width, float height, const Face &face) noexcept {
     Vec4 x = face.clipMatrixInv * Vec4{oX - baseX, 0, 0, 0}; // proportion 4D
     Vec4 y = face.clipMatrixInv * Vec4{0, oY - baseY, 0, 0}; // proportion 4D
     Vec4 z = face.clipMatrixInv * Vec4{baseX, baseY, 1, 0}; // proportion 4D
-    return std::array<Vec3, 3> {
-        Vec3{x.GetX(), x.GetY(), x.GetZ()},
-        Vec3{y.GetX(), y.GetY(), y.GetZ()},
-        Vec3{z.GetX(), z.GetY(), z.GetZ()}
-    };
+    return std::array<Vec3, 3> { x.Trim(), y.Trim(), z.Trim() };
 }
 
 void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face *face) {

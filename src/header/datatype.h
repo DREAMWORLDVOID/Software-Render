@@ -13,21 +13,17 @@ struct DepthBuffer {
 };
 
 struct Vertex {
-    union { struct { float x, y, z, w; }; Vec4 Model; };
-    union { struct { float nx, ny, nz; }; Vec3 Normal; };
+    Vec4 Model;
+    Vec3 Normal;
     float s, t;
 
-    Vertex(const Vertex& r) noexcept : Model(r.Model), Normal(r.Normal), s(r.s), t(r.t) {}
-
-    Vertex() : x(0), y(0), z(0), w(1),
-               nx(0), ny(0), nz(0),
-               s(0), t(0) {}
+    Vertex() noexcept : Model(0, 0, 0, 1),Normal(0, 0, 0), s(0), t(0) {}
 
     Vertex(float vx, float vy, float vz,
            float vnx, float vny, float vnz,
            float vs, float vt) :
-            x(vx), y(vy), z(vz), w(1),
-            nx(vnx), ny(vny), nz(vnz),
+            Model(vx, vy, vz, 1),
+            Normal(vnx, vny, vnz),
             s(vs), t(vt) {}
 };
 
@@ -43,9 +39,6 @@ struct VertexOut {
                   View(0, 0, 0, 1),
                   Normal(0, 0, 0),
                   s(0), t(0) {}
-
-    VertexOut(const VertexOut& r) noexcept: Clip(r.Clip), World(r.World), View(r.View), Normal(r.Normal), s(r.s), t(r.t) {}
-
 };
 
 struct Fragment {

@@ -11,7 +11,7 @@ public:
     Vec2 ndcA, ndcB, ndcC;
     Mat44 clipMatrixInv;
 
-    Face(Vertex ma, Vertex mb, Vertex mc);
+    Face(const Vertex& ma, const Vertex& mb, const Vertex& mc);
 
     Face();
 

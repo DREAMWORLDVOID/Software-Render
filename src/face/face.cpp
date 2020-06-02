@@ -1,6 +1,6 @@
 #include "face.h"
 
-Face::Face(Vertex ma, Vertex mb, Vertex mc) {
+Face::Face(const Vertex& ma, const Vertex& mb, const Vertex& mc) {
     modelA = ma;
     modelB = mb;
     modelC = mc;

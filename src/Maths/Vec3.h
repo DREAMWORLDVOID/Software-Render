@@ -6,13 +6,13 @@
 class Vec3 {
 public:
     //constructors
-    Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+    Vec3() : vec(0.0) {}
 
     Vec3(const Sse::Vec4f v) noexcept: vec(v) {}
 
-    Vec3(float newX, float newY, float newZ) : x(newX), y(newY), z(newZ) {}
+    Vec3(float newX, float newY, float newZ) : vec(newX, newY, newZ, 0) {}
 
-    Vec3(const Vec3 &rhs) : x(rhs.x), y(rhs.y), z(rhs.z) {}
+    Vec3(const Vec3 &rhs) : vec(rhs.vec) {}
 
     //Accessors kept for compatibility
     void SetX(float newX) { x = newX; }
@@ -40,7 +40,7 @@ public:
         return Vec3(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x);
     }
 
-    [[nodiscard]] float DotProduct(const Vec3 &rhs) const { return x * rhs.x + y * rhs.y + z * rhs.z; }
+    [[nodiscard]] float DotProduct(const Vec3 &rhs) const { return Vec3(vec.dot(rhs.vec)).GetX(); }
 
     //overloaded operators
     //binary operators
