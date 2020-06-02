@@ -262,7 +262,7 @@ void calcBounds(float scrAX, float scrAY, float scrBX, float scrBY, float scrCX,
     }
 }
 
-auto GetUnits(float width, float height, Face& face) noexcept {
+auto GetUnits(float width, float height, const Face &face) noexcept {
     float baseX, baseY, oX, oY;
     invViewPortTransform(0, 0, width, height, baseX, baseY);
     invViewPortTransform(1, 1, width, height, oX, oY);
@@ -276,7 +276,7 @@ auto GetUnits(float width, float height, Face& face) noexcept {
     };
 }
 
-void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face) {
+void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, const Face *face) {
     float ndcX = 0, ndcY = 0;
     float scrAX, scrAY, scrBX, scrBY, scrCX, scrCY;
     viewPortTransform(face->ndcA.x, face->ndcA.y, fb->width, fb->height, scrAX, scrAY);
@@ -298,6 +298,11 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face)
             float sum = pFrag0.GetX() + pFrag0.GetY() + pFrag0.GetZ();
             const auto pFrag = pFrag0 * (1.0f / sum);
 
+            const auto& cA = face->clipA;
+            const auto& cB = face->clipB;
+            const auto& cC = face->clipC;
+            // NDC Check
+
             Fragment frag;
             float invClipW = 1.0f / pFrag.DotProduct({face->clipA.w, face->clipB.w, face->clipC.w});
             frag.ndcZ = pFrag.DotProduct({face->clipA.z, face->clipB.z, face->clipC.z}) * invClipW;
@@ -312,20 +317,14 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face)
 
             frag.ndcX = pFrag.DotProduct({face->clipA.x, face->clipB.x, face->clipC.x}) * invClipW;
             frag.ndcY = pFrag.DotProduct({face->clipA.y, face->clipB.y, face->clipC.y}) * invClipW;
-            frag.wx = pFrag.DotProduct({face->clipA.wx, face->clipB.wx, face->clipC.wx});
-            frag.wy = pFrag.DotProduct({face->clipA.wy, face->clipB.wy, face->clipC.wy});
-            frag.wz = pFrag.DotProduct({face->clipA.wz, face->clipB.wz, face->clipC.wz});
-            frag.ww = pFrag.DotProduct({face->clipA.ww, face->clipB.ww, face->clipC.ww});
-            frag.nx = pFrag.DotProduct({face->clipA.nx, face->clipB.nx, face->clipC.nx});
-            frag.ny = pFrag.DotProduct({face->clipA.ny, face->clipB.ny, face->clipC.ny});
-            frag.nz = pFrag.DotProduct({face->clipA.nz, face->clipB.nz, face->clipC.nz});
+            frag.World = cA.World * pFrag.GetX() + cB.World * pFrag.GetY() + cC.World * pFrag.GetZ();
+            frag.Normal = cA.Normal * pFrag.GetX() + cB.Normal * pFrag.GetY() + cC.Normal * pFrag.GetZ();
             frag.s = pFrag.DotProduct({face->clipA.s, face->clipB.s, face->clipC.s});
             frag.t = pFrag.DotProduct({face->clipA.t, face->clipB.t, face->clipC.t});
 
             FragmentOut outFrag;
             fs(frag, outFrag);
-            unsigned char cr = 255, cg = 255, cb = 255,
-                    sr = 255, sg = 255, sb = 255;
+            unsigned char cr = 255, cg = 255, cb = 255, sr = 255, sg = 255, sb = 255;
             scaleColor(outFrag.r, outFrag.g, outFrag.b, cr, cg, cb);
             if (blendFlag) {
                 readFrameBuffer(fb, scrX, scrY, sr, sg, sb);
@@ -339,13 +338,9 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face)
 bool cullFace(Face *face, int flag) {
     Vec3 faceNormal(face->clipA.nx, face->clipA.ny, face->clipA.nz);
     Vec3 eyeVec(eyeX - face->clipA.wx, eyeY - face->clipA.wy, eyeZ - face->clipA.wz);
-    if (flag == CULL_NONE)
-        return false;
-    if (flag == CULL_BACK) {
-        return eyeVec.DotProduct(faceNormal) <= 0;
-    } else if (flag == CULL_FRONT) {
-        return eyeVec.DotProduct(faceNormal) >= 0;
-    }
+    if (flag == CULL_NONE) return false;
+    if (flag == CULL_BACK) return eyeVec.DotProduct(faceNormal) <= 0;
+    if (flag == CULL_FRONT) return eyeVec.DotProduct(faceNormal) >= 0;
     return false;
 }
 

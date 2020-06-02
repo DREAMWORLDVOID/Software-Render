@@ -1,9 +1,9 @@
 #ifndef FACE_H_
 #define FACE_H_
 
-#include "../header/constants.h"
-#include "../header/datatype.h"
-#include "../Maths/Maths.h"
+#include "header/constants.h"
+#include "header/datatype.h"
+#include "Maths/Maths.h"
 
 class Face {
 public:

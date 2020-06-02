@@ -8,6 +8,8 @@ namespace Sse {
     public:
         Vec4f() noexcept = default;
 
+        explicit Vec4f(__m128 v) noexcept: _vec(v) {}
+
         explicit Vec4f(const float f) noexcept
                 : _vec(_mm_set1_ps(f)) {}
 
@@ -90,9 +92,6 @@ namespace Sse {
         static Vec4f inf() noexcept { return Vec4f(_mm_castsi128_ps(_mm_set1_epi32(0x7F800000))); }
 
     private:
-        explicit Vec4f(__m128 v) noexcept
-                : _vec(v) {}
-
         __m128 _vec;
     };
 

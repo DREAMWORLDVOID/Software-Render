@@ -3,10 +3,10 @@
 
 #include "Maths/Maths.h"
 
-#define PI 3.1415926
-#define PI2 6.2831852
-#define A2R 0.01745329222 //�Ƕ�ת����
-#define R2A 57.2957804905 //����ת�Ƕ�
+#define PI 3.1415926f
+#define PI2 6.2831852f
+#define A2R 0.01745329222f //�Ƕ�ת����
+#define R2A 57.2957804905f //����ת�Ƕ�
 
 Mat44 lookAt(float eyeX, float eyeY, float eyeZ,
              float centerX, float centerY, float centerZ,
@@ -29,8 +29,6 @@ Mat44 rotateZ(float angle);
 Mat44 scale(float size);
 
 Mat44 translate(float tx, float ty, float tz);
-
-Vec4 mul(Vec4 a, Vec4 b);
 
 void interpolate3f(float pa, float pb, float pc,
                    float a, float b, float c,

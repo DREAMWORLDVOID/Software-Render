@@ -40,6 +40,8 @@ public:
 
     Vec4 operator-(const Vec4 &rhs) const noexcept { return Vec4(vec - rhs.vec); }
 
+    Vec4 operator*(const Vec4 &rhs) const noexcept { return Vec4(vec * rhs.vec); }
+
     Vec4 operator*(const float rhs) const noexcept { return Vec4(vec * Sse::Vec4f{rhs}); }
 
     Vec4 operator/(const float rhs) const noexcept {
@@ -50,6 +52,8 @@ public:
     Vec4 &operator+=(const Vec4 &rhs) noexcept { return *this = *this + rhs; }
 
     Vec4 &operator-=(const Vec4 &rhs) noexcept { return *this = *this - rhs; }
+
+    Vec4 &operator*=(const Vec4 &rhs) noexcept { return *this = *this * rhs; }
 
     Vec4 &operator*=(const float rhs) noexcept { return *this = *this * rhs; }
 
@@ -64,7 +68,9 @@ public:
 
     Vec4 operator+() const { return (*this); }
 
-    operator Vec3() const; //convert v4d to v3d
+    [[nodiscard]] auto Trim() const noexcept { return Vec3(x, y, z); }
+
+    [[nodiscard]] auto Sse() const noexcept { return vec; }
 
     //member variables
     union {

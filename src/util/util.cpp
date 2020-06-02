@@ -152,15 +152,6 @@ Mat44 translate(float tx, float ty, float tz) {
     return mat;
 }
 
-Vec4 mul(Vec4 a, Vec4 b) {
-    Vec4 vec;
-    vec.x = a.x * b.x;
-    vec.y = a.y * b.y;
-    vec.z = a.z * b.z;
-    vec.w = a.w * b.w;
-    return vec;
-}
-
 void interpolate3f(float pa, float pb, float pc,
                    float a, float b, float c,
                    float &result) {

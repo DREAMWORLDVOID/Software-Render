@@ -1,19 +1,23 @@
-#ifndef DATATYPE_H_
-#define DATATYPE_H_
+#pragma once
+
+#include "Maths/Vec4.h"
 
 struct FrameBuffer {
     unsigned char *colorBuffer;
     int width, height;
 };
+
 struct DepthBuffer {
     float *depthBuffer;
     int width, height;
 };
 
 struct Vertex {
-    float x, y, z, w;
-    float nx, ny, nz;
+    union { struct { float x, y, z, w; }; Vec4 Model; };
+    union { struct { float nx, ny, nz; }; Vec3 Normal; };
     float s, t;
+
+    Vertex(const Vertex& r) noexcept : Model(r.Model), Normal(r.Normal), s(r.s), t(r.t) {}
 
     Vertex() : x(0), y(0), z(0), w(1),
                nx(0), ny(0), nz(0),
@@ -27,67 +31,27 @@ struct Vertex {
             s(vs), t(vt) {}
 };
 
-inline void vertexCopy(Vertex *d, Vertex *s) {
-    d->x = s->x;
-    d->y = s->y;
-    d->z = s->z;
-    d->w = s->w;
-    d->nx = s->nx;
-    d->ny = s->ny;
-    d->nz = s->nz;
-    d->s = s->s;
-    d->t = s->t;
-}
-
 struct VertexOut {
-    float x, y, z, w;
-    float wx, wy, wz, ww;
-    float vx, vy, vz, vw;
-    float nx, ny, nz;
+    union { struct { float x, y, z, w; }; Vec4 Clip; };
+    union { struct { float wx, wy, wz, ww; }; Vec4 World; };
+    union { struct { float vx, vy, vz, vw;}; Vec4 View; };
+    union { struct { float nx, ny, nz; }; Vec3 Normal; };
     float s, t;
 
-    VertexOut() : x(0), y(0), z(0), w(1),
-                  wx(0), wy(0), wz(0), ww(1),
-                  vx(0), vy(0), vz(0), vw(1),
-                  nx(0), ny(0), nz(0),
+    VertexOut() : Clip(0, 0, 0, 1),
+                  World(0, 0, 0, 1),
+                  View(0, 0, 0, 1),
+                  Normal(0, 0, 0),
                   s(0), t(0) {}
 
-    VertexOut(float vx, float vy, float vz,
-              float vwx, float vwy, float vwz,
-              float vvx, float vvy, float vvz,
-              float vnx, float vny, float vnz,
-              float vs, float vt) :
-            x(vx), y(vy), z(vz), w(1),
-            wx(vwx), wy(vwy), wz(vwz), ww(1),
-            vx(vvx), vy(vvy), vz(vvz), vw(1),
-            nx(vnx), ny(vny), nz(vnz),
-            s(vs), t(vt) {}
+    VertexOut(const VertexOut& r) noexcept: Clip(r.Clip), World(r.World), View(r.View), Normal(r.Normal), s(r.s), t(r.t) {}
+
 };
 
-inline void vertexOutCopy(VertexOut *d, VertexOut *s) {
-    d->x = s->x;
-    d->y = s->y;
-    d->z = s->z;
-    d->w = s->w;
-    d->wx = s->wx;
-    d->wy = s->wy;
-    d->wz = s->wz;
-    d->ww = s->ww;
-    d->vx = s->vx;
-    d->vy = s->vy;
-    d->vz = s->vz;
-    d->vw = s->vw;
-    d->nx = s->nx;
-    d->ny = s->ny;
-    d->nz = s->nz;
-    d->s = s->s;
-    d->t = s->t;
-}
-
 struct Fragment {
-    float ndcX, ndcY, ndcZ;
-    float wx, wy, wz, ww;
-    float nx, ny, nz;
+    union { struct { float ndcX, ndcY, ndcZ; }; Vec3 Ndc; };
+    union { struct { float wx, wy, wz, ww; }; Vec4 World; };
+    union { struct { float nx, ny, nz; }; Vec3 Normal; };
     float s, t;
 
     Fragment() : ndcX(0), ndcY(0), ndcZ(1),
@@ -97,15 +61,14 @@ struct Fragment {
 };
 
 struct FragmentOut {
-    float r, g, b, a;
+    union { struct { float r, g, b, a; }; Vec4 Color; };
 
     FragmentOut() : r(0), g(0), b(0), a(1) {}
 };
 
-typedef void (*VertexShader)(Vertex input, VertexOut &output);
+typedef void (*VertexShader)(const Vertex &input, VertexOut &output);
 
-typedef void (*FragmentShader)(Fragment input, FragmentOut &output);
+typedef void (*FragmentShader)(const Fragment &input, FragmentOut &output);
 
 typedef void (*DrawCall)();
 
-#endif /* DATATYPE_H_ */

@@ -43,14 +43,14 @@ void Face::calculateClipMatrixInv() {
 }
 
 void Face::copy2Face(Vertex a, Vertex b, Vertex c) {
-    vertexCopy(&modelA, &a);
-    vertexCopy(&modelB, &b);
-    vertexCopy(&modelC, &c);
+    modelA = a;
+    modelB = b;
+    modelC = c;
 }
 
 void Face::copy2FaceOut(VertexOut a, VertexOut b, VertexOut c) {
-    vertexOutCopy(&clipA, &a);
-    vertexOutCopy(&clipB, &b);
-    vertexOutCopy(&clipC, &c);
+    clipA = a;
+    clipB = b;
+    clipC = c;
 }
 

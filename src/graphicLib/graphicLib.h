@@ -53,7 +53,7 @@ void viewPortTransform(float ndcX, float ndcY, float width, float height,
                        float &screenX, float &screenY);
 
 void rasterize2(FrameBuffer *fb, DepthBuffer *db,
-                FragmentShader fs, Face *face);
+                FragmentShader fs, const Face *face);
 
 void blend(unsigned char srcR, unsigned char srcG, unsigned char srcB, float srcA,
            unsigned char dstR, unsigned char dstG, unsigned char dstB,

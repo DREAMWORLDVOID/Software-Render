@@ -5,7 +5,7 @@ Sphere::Sphere(int m, int n) {
     verts = new Vertex[faceNum * 3];
 
     float stepAngZ = PI / m;
-    float stepAngXY = 2.0 * PI / n;
+    float stepAngXY = 2.0f * PI / n;
     float angZ = 0.0;
     float angXY = 0.0;
 

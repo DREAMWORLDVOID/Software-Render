@@ -1,9 +1,14 @@
 #pragma once
 
+#include <cmath>
+#include "Vec4f.h"
+
 class Vec3 {
 public:
     //constructors
     Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+
+    Vec3(const Sse::Vec4f v) noexcept: vec(v) {}
 
     Vec3(float newX, float newY, float newZ) : x(newX), y(newY), z(newZ) {}
 
@@ -22,21 +27,13 @@ public:
 
     [[nodiscard]] float GetZ() const { return z; }
 
-    [[nodiscard]] float GetSquaredLength() const { return (x * x) + (y * y) + (z * z); }
+    [[nodiscard]] float GetLength() const { return Vec3{vec.length()}.GetX(); }
 
-    [[nodiscard]] float GetLength() const { return sqrt(GetSquaredLength()); }
+    [[nodiscard]] float GetSquaredLength() const { return Vec3{vec.lengthSqr()}.GetX(); }
 
-    void Normalize() noexcept {
-        const auto length = GetSquaredLength();
-        if (length == 1 || length == 0) return;
-        *this *= (1.0f / sqrt(length));
-    }
+    void Normalize() noexcept { vec = vec.normalized(); }
 
-    [[nodiscard]] Vec3 GetNormalized() const noexcept {
-        auto result = *this;
-        result.Normalize();
-        return result;
-    }
+    [[nodiscard]] Vec3 GetNormalized() const noexcept { return Vec3(vec.normalized()); }
 
     //vector algebra
     [[nodiscard]] Vec3 CrossProduct(const Vec3 &rhs) const {
@@ -47,11 +44,13 @@ public:
 
     //overloaded operators
     //binary operators
-    Vec3 operator+(const Vec3 &rhs) const { return Vec3(x + rhs.x, y + rhs.y, z + rhs.z); }
+    Vec3 operator+(const Vec3 &rhs) const { return Vec3(vec + rhs.vec); }
 
-    Vec3 operator-(const Vec3 &rhs) const { return Vec3(x - rhs.x, y - rhs.y, z - rhs.z); }
+    Vec3 operator-(const Vec3 &rhs) const { return Vec3(vec - rhs.vec);}
 
-    Vec3 operator*(const float rhs) const { return Vec3(x * rhs, y * rhs, z * rhs); }
+    Vec3 operator*(const Vec3 &rhs) const { return Vec3(vec * rhs.vec);}
+
+    Vec3 operator*(const float rhs) const { return Vec3(vec * Sse::Vec4f(rhs)); }
 
     Vec3 operator/(const float rhs) const {
         return (rhs == 0.0f) ? Vec3(0.0f, 0.0f, 0.0f) : Vec3(x / rhs, y / rhs, z / rhs);
@@ -61,6 +60,8 @@ public:
     Vec3 &operator+=(const Vec3 &rhs) noexcept { return *this = *this + rhs; }
 
     Vec3 &operator-=(const Vec3 &rhs) noexcept { return *this = *this - rhs; }
+
+    Vec3 &operator*=(const Vec3 &rhs) noexcept { return *this = *this * rhs; }
 
     Vec3 &operator*=(const float rhs) noexcept { return *this = *this * rhs; }
 
@@ -75,10 +76,17 @@ public:
 
     Vec3 operator+() const { return *this; }
 
+    [[nodiscard]] auto Sse() const noexcept { return vec; }
+
     //member variables
-    float x;
-    float y;
-    float z;
+    union {
+        struct {
+            float x;
+            float y;
+            float z;
+        };
+        Sse::Vec4f vec;
+    };
 };
 
 inline Vec3 operator*(float scale, const Vec3 &rhs) noexcept { return rhs * scale; }
