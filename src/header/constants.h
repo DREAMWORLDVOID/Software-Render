@@ -9,7 +9,7 @@
 #define CULL_BACK 0
 #define CULL_FRONT 1
 #define CULL_NONE 2
-#define INV_SCALE 0.003921568627451
+#define INV_SCALE 0.003921568627451f
 
 #define NONE 0
 #define LEFT 1

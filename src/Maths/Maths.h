@@ -16,7 +16,6 @@
 #include "Vec3.h"
 #include "Vec4.h"
 #include "Mat44.h"
-#include "PLANE.h"
 
 template<class T>
 inline T QuadraticInterpolate(const T &v1, const T &v2, const T &v3, float factor) noexcept {

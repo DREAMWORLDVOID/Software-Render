@@ -13,7 +13,6 @@ Sampler::~Sampler() {
 }
 
 Vec4 Sampler::texture2D(float s, float t) {
-    Vec4 color(1, 1, 1, 1);
     float u = (float) (width - 1) * s;
     float v = (float) (height - 1) * (1.0 - t);
     int iu = (int) u;
@@ -23,37 +22,29 @@ Vec4 Sampler::texture2D(float s, float t) {
 
     float uNextPer = u - iu;
     float vNextPer = v - iv;
-    float uPer = 1.0 - uNextPer;
-    float vPer = 1.0 - vNextPer;
+    float uPer = 1.0f - uNextPer;
+    float vPer = 1.0f - vNextPer;
 
     int imgIndex = 3 * (iv * width + iu);
-    color.x = (float) imgData[imgIndex] * INV_SCALE;
-    color.y = (float) imgData[imgIndex + 1] * INV_SCALE;
-    color.z = (float) imgData[imgIndex + 2] * INV_SCALE;
-
     int imgIndexNextU = 3 * (iv * width + uNext);
     int imgIndexNextV = 3 * (vNext * width + iu);
     int imgIndexNextUV = 3 * (vNext * width + uNext);
+    const auto color = Vec3{
+            float(imgData[imgIndex]), float(imgData[imgIndex + 1]), float(imgData[imgIndex + 2])
+    } * (uPer * vPer);
 
-    Vec4 colorNextU(1, 1, 1, 1), colorNextV(1, 1, 1, 1), colorNextUV(1, 1, 1, 1);
-    colorNextU.x = (float) imgData[imgIndexNextU] * INV_SCALE;
-    colorNextU.y = (float) imgData[imgIndexNextU + 1] * INV_SCALE;
-    colorNextU.z = (float) imgData[imgIndexNextU + 2] * INV_SCALE;
-    colorNextV.x = (float) imgData[imgIndexNextV] * INV_SCALE;
-    colorNextV.y = (float) imgData[imgIndexNextV + 1] * INV_SCALE;
-    colorNextV.z = (float) imgData[imgIndexNextV + 2] * INV_SCALE;
-    colorNextUV.x = (float) imgData[imgIndexNextUV] * INV_SCALE;
-    colorNextUV.y = (float) imgData[imgIndexNextUV + 1] * INV_SCALE;
-    colorNextUV.z = (float) imgData[imgIndexNextUV + 2] * INV_SCALE;
+    const auto colorNextU = Vec3{
+            float(imgData[imgIndexNextU]), float(imgData[imgIndexNextU + 1]), float(imgData[imgIndexNextU + 2])
+    } * (uNextPer * vPer);
 
-    color.x = color.x * uPer * vPer + colorNextU.x * uNextPer * vPer + colorNextV.x * uPer * vNextPer +
-              colorNextUV.x * uNextPer * vNextPer;
-    color.y = color.y * uPer * vPer + colorNextU.y * uNextPer * vPer + colorNextV.y * uPer * vNextPer +
-              colorNextUV.y * uNextPer * vNextPer;
-    color.z = color.z * uPer * vPer + colorNextU.z * uNextPer * vPer + colorNextV.z * uPer * vNextPer +
-              colorNextUV.z * uNextPer * vNextPer;
+    const auto colorNextV = Vec3{
+            float(imgData[imgIndexNextV]), float(imgData[imgIndexNextV + 1]), float(imgData[imgIndexNextV + 2])
+    } * (uPer * vNextPer);
 
-    return color;
+    const auto colorNextUV = Vec3{
+            float(imgData[imgIndexNextUV]), float(imgData[imgIndexNextUV + 1]), float(imgData[imgIndexNextUV + 2])
+    } * (uNextPer * vNextPer);
+    return Vec4((color + colorNextU + colorNextV + colorNextUV) * INV_SCALE, 1);
 }
 
 void writeFrameBuffer2Sampler(FrameBuffer *fb, Sampler *sampler) {
