@@ -52,9 +52,6 @@ void viewPortTransform(float ndcX, float ndcY, float width, float height,
 void viewPortTransform(float ndcX, float ndcY, float width, float height,
                        float &screenX, float &screenY);
 
-void rasterize(FrameBuffer *fb, DepthBuffer *db,
-               FragmentShader fs, Face *face);
-
 void rasterize2(FrameBuffer *fb, DepthBuffer *db,
                 FragmentShader fs, Face *face);
 

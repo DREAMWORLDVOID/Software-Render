@@ -272,11 +272,11 @@ Mat44 Mat44::GetAffineInverse() const {
                  1.0f);
 }
 
-void Mat44::AffineInvertTranspose(void) {
+void Mat44::AffineInvertTranspose() {
     (*this) = GetAffineInverseTranspose();
 }
 
-Mat44 Mat44::GetAffineInverseTranspose(void) const {
+Mat44 Mat44::GetAffineInverseTranspose() const {
     //return the transpose of the rotation part
     //and the negative of the inverse rotated translation part
     //transposed

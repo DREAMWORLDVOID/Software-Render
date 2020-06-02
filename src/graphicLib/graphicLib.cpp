@@ -1,5 +1,7 @@
 #include "graphicLib.h"
 #include "../shader/shader.h"
+#include <utility>
+#include <array>
 
 float eyeX, eyeY, eyeZ, clipNear;
 Face *nFace1;
@@ -215,60 +217,6 @@ void blend(unsigned char srcR, unsigned char srcG, unsigned char srcB, float src
     finalB = finB > 255 ? 255 : finB;
 }
 
-void rasterize(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face) {
-    float ndcX = 0, ndcY = 0;
-    int scrAX, scrAY, scrBX, scrBY, scrCX, scrCY;
-    viewPortTransform(face->ndcA.x, face->ndcA.y, fb->width, fb->height, scrAX, scrAY);
-    viewPortTransform(face->ndcB.x, face->ndcB.y, fb->width, fb->height, scrBX, scrBY);
-    viewPortTransform(face->ndcC.x, face->ndcC.y, fb->width, fb->height, scrCX, scrCY);
-    int minX = max(0, min(scrAX, min(scrBX, scrCX)));
-    int maxX = min(fb->width - 1, max(scrAX, max(scrBX, scrCX)));
-    int minY = max(0, min(scrAY, min(scrBY, scrCY)));
-    int maxY = min(fb->height - 1, max(scrAY, max(scrBY, scrCY)));
-    for (int scrY = minY; scrY <= maxY; scrY++) {
-        for (int scrX = minX; scrX <= maxX; scrX++) {
-            invViewPortTransform(scrX, scrY, fb->width, fb->height, ndcX, ndcY);
-            Vec4 ndcPixel(ndcX, ndcY, 1, 0);
-            Vec4 proportion4D = face->clipMatrixInv * ndcPixel;
-            Vec3 proportionFragment(proportion4D.x, proportion4D.y, proportion4D.z);
-            if (proportionFragment.GetX() < 0.0 || proportionFragment.GetY() < 0.0 || proportionFragment.GetZ() < 0.0)
-                continue;
-            float sum = proportionFragment.GetX() + proportionFragment.GetY() + proportionFragment.GetZ();
-            proportionFragment *= (1.0f / sum);
-
-            Fragment frag;
-            float invClipW = 1.0f / proportionFragment.DotProduct({face->clipA.w, face->clipB.w, face->clipC.w});
-            frag.ndcZ = proportionFragment.DotProduct({face->clipA.z, face->clipB.z, face->clipC.z})* invClipW;
-            if (frag.ndcZ < -1.0f || frag.ndcZ > 1.0f) continue;
-
-            // early depth
-            if (db != nullptr) {
-                float storeZ = readDepth(db, scrX, scrY);
-                if (storeZ < frag.ndcZ) continue;
-                writeDepth(db, scrX, scrY, frag.ndcZ);
-            }
-
-            frag.ndcX = proportionFragment.DotProduct({face->clipA.x, face->clipB.x, face->clipC.x}) * invClipW;
-            frag.ndcY = proportionFragment.DotProduct({face->clipA.y, face->clipB.y, face->clipC.y}) * invClipW;
-            frag.wx = proportionFragment.DotProduct({face->clipA.wx, face->clipB.wx, face->clipC.wx});
-            frag.wy = proportionFragment.DotProduct({face->clipA.wy, face->clipB.wy, face->clipC.wy});
-            frag.wz = proportionFragment.DotProduct({face->clipA.wz, face->clipB.wz, face->clipC.wz});
-            frag.ww = proportionFragment.DotProduct({face->clipA.ww, face->clipB.ww, face->clipC.ww});
-            frag.nx = proportionFragment.DotProduct({face->clipA.nx, face->clipB.nx, face->clipC.nx});
-            frag.ny = proportionFragment.DotProduct({face->clipA.ny, face->clipB.ny, face->clipC.ny});
-            frag.nz = proportionFragment.DotProduct({face->clipA.nz, face->clipB.nz, face->clipC.nz});
-            frag.s = proportionFragment.DotProduct({face->clipA.s, face->clipB.s, face->clipC.s});
-            frag.t = proportionFragment.DotProduct({face->clipA.t, face->clipB.t, face->clipC.t});
-
-            FragmentOut outFrag;
-            fs(frag, outFrag);
-            unsigned char cr = 255, cg = 255, cb = 255;
-            scaleColor(outFrag.r, outFrag.g, outFrag.b, cr, cg, cb);
-            drawPixel(fb, scrX, scrY, cr, cg, cb);
-        }
-    }
-}
-
 void calcBounds(float scrAX, float scrAY, float scrBX, float scrBY, float scrCX, float scrCY,
                 float scrY, float &x1, float &x2) {
     if (scrAY == scrBY) {
@@ -314,34 +262,45 @@ void calcBounds(float scrAX, float scrAY, float scrBX, float scrBY, float scrCX,
     }
 }
 
+auto GetUnits(float width, float height, Face& face) noexcept {
+    float baseX, baseY, oX, oY;
+    invViewPortTransform(0, 0, width, height, baseX, baseY);
+    invViewPortTransform(1, 1, width, height, oX, oY);
+    Vec4 x = face.clipMatrixInv * Vec4{oX - baseX, 0, 0, 0}; // proportion 4D
+    Vec4 y = face.clipMatrixInv * Vec4{0, oY - baseY, 0, 0}; // proportion 4D
+    Vec4 z = face.clipMatrixInv * Vec4{baseX, baseY, 1, 0}; // proportion 4D
+    return std::array<Vec3, 3> {
+        Vec3{x.GetX(), x.GetY(), x.GetZ()},
+        Vec3{y.GetX(), y.GetY(), y.GetZ()},
+        Vec3{z.GetX(), z.GetY(), z.GetZ()}
+    };
+}
+
 void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face) {
     float ndcX = 0, ndcY = 0;
     float scrAX, scrAY, scrBX, scrBY, scrCX, scrCY;
     viewPortTransform(face->ndcA.x, face->ndcA.y, fb->width, fb->height, scrAX, scrAY);
     viewPortTransform(face->ndcB.x, face->ndcB.y, fb->width, fb->height, scrBX, scrBY);
     viewPortTransform(face->ndcC.x, face->ndcC.y, fb->width, fb->height, scrCX, scrCY);
-    if (scrAY == scrBY && scrAY == scrCY)
-        return;
+    if (scrAY == scrBY && scrAY == scrCY) return;
     int minY = max(0, min(scrAY, min(scrBY, scrCY)));
     int maxY = min(fb->height - 1, max(scrAY, max(scrBY, scrCY)));
-    for (int scrY = minY; scrY <= maxY; scrY++) {
+    auto&& [uX, uY, uB] = GetUnits(fb->width, fb->height, *face);
+    auto baseY = uB + uY * float(minY);
+    for (int scrY = minY; scrY <= maxY; (baseY += uY, scrY++)) {
         float x1, x2;
         calcBounds(scrAX, scrAY, scrBX, scrBY, scrCX, scrCY, (float) scrY, x1, x2);
         int minX = max(0, roundf(min(x1, x2)));
         int maxX = min(fb->width - 1, roundf(max(x1, x2)));
-        for (int scrX = minX; scrX <= maxX; scrX++) {
-            invViewPortTransform(scrX, scrY, fb->width, fb->height, ndcX, ndcY);
-            Vec4 ndcPixel(ndcX, ndcY, 1, 0);
-            Vec4 proportion4D = face->clipMatrixInv * ndcPixel;
-            Vec3 proportionFragment(proportion4D.x, proportion4D.y, proportion4D.z);
-            if (proportionFragment.GetX() < 0.0 || proportionFragment.GetY() < 0.0 || proportionFragment.GetZ() < 0.0)
-                continue;
-            float sum = proportionFragment.GetX() + proportionFragment.GetY() + proportionFragment.GetZ();
-            proportionFragment *= (1.0f / sum);
+        auto pFrag0 = baseY + uX * float(minX); // proportion fragment
+        for (int scrX = minX; scrX <= maxX; (pFrag0 += uX, scrX++)) {
+            if (pFrag0.GetX() < 0.0 || pFrag0.GetY() < 0.0 || pFrag0.GetZ() < 0.0) continue;
+            float sum = pFrag0.GetX() + pFrag0.GetY() + pFrag0.GetZ();
+            const auto pFrag = pFrag0 * (1.0f / sum);
 
             Fragment frag;
-            float invClipW = 1.0f / proportionFragment.DotProduct({face->clipA.w, face->clipB.w, face->clipC.w});
-            frag.ndcZ = proportionFragment.DotProduct({face->clipA.z, face->clipB.z, face->clipC.z})* invClipW;
+            float invClipW = 1.0f / pFrag.DotProduct({face->clipA.w, face->clipB.w, face->clipC.w});
+            frag.ndcZ = pFrag.DotProduct({face->clipA.z, face->clipB.z, face->clipC.z}) * invClipW;
             if (frag.ndcZ < -1.0f || frag.ndcZ > 1.0f) continue;
 
             // early depth
@@ -351,17 +310,17 @@ void rasterize2(FrameBuffer *fb, DepthBuffer *db, FragmentShader fs, Face *face)
                 writeDepth(db, scrX, scrY, frag.ndcZ);
             }
 
-            frag.ndcX = proportionFragment.DotProduct({face->clipA.x, face->clipB.x, face->clipC.x}) * invClipW;
-            frag.ndcY = proportionFragment.DotProduct({face->clipA.y, face->clipB.y, face->clipC.y}) * invClipW;
-            frag.wx = proportionFragment.DotProduct({face->clipA.wx, face->clipB.wx, face->clipC.wx});
-            frag.wy = proportionFragment.DotProduct({face->clipA.wy, face->clipB.wy, face->clipC.wy});
-            frag.wz = proportionFragment.DotProduct({face->clipA.wz, face->clipB.wz, face->clipC.wz});
-            frag.ww = proportionFragment.DotProduct({face->clipA.ww, face->clipB.ww, face->clipC.ww});
-            frag.nx = proportionFragment.DotProduct({face->clipA.nx, face->clipB.nx, face->clipC.nx});
-            frag.ny = proportionFragment.DotProduct({face->clipA.ny, face->clipB.ny, face->clipC.ny});
-            frag.nz = proportionFragment.DotProduct({face->clipA.nz, face->clipB.nz, face->clipC.nz});
-            frag.s = proportionFragment.DotProduct({face->clipA.s, face->clipB.s, face->clipC.s});
-            frag.t = proportionFragment.DotProduct({face->clipA.t, face->clipB.t, face->clipC.t});
+            frag.ndcX = pFrag.DotProduct({face->clipA.x, face->clipB.x, face->clipC.x}) * invClipW;
+            frag.ndcY = pFrag.DotProduct({face->clipA.y, face->clipB.y, face->clipC.y}) * invClipW;
+            frag.wx = pFrag.DotProduct({face->clipA.wx, face->clipB.wx, face->clipC.wx});
+            frag.wy = pFrag.DotProduct({face->clipA.wy, face->clipB.wy, face->clipC.wy});
+            frag.wz = pFrag.DotProduct({face->clipA.wz, face->clipB.wz, face->clipC.wz});
+            frag.ww = pFrag.DotProduct({face->clipA.ww, face->clipB.ww, face->clipC.ww});
+            frag.nx = pFrag.DotProduct({face->clipA.nx, face->clipB.nx, face->clipC.nx});
+            frag.ny = pFrag.DotProduct({face->clipA.ny, face->clipB.ny, face->clipC.ny});
+            frag.nz = pFrag.DotProduct({face->clipA.nz, face->clipB.nz, face->clipC.nz});
+            frag.s = pFrag.DotProduct({face->clipA.s, face->clipB.s, face->clipC.s});
+            frag.t = pFrag.DotProduct({face->clipA.t, face->clipB.t, face->clipC.t});
 
             FragmentOut outFrag;
             fs(frag, outFrag);
@@ -383,13 +342,9 @@ bool cullFace(Face *face, int flag) {
     if (flag == CULL_NONE)
         return false;
     if (flag == CULL_BACK) {
-        if (eyeVec.DotProduct(faceNormal) <= 0)
-            return true;
-        return false;
+        return eyeVec.DotProduct(faceNormal) <= 0;
     } else if (flag == CULL_FRONT) {
-        if (eyeVec.DotProduct(faceNormal) >= 0)
-            return true;
-        return false;
+        return eyeVec.DotProduct(faceNormal) >= 0;
     }
     return false;
 }
